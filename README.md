@@ -1,4 +1,4 @@
-# Chroma UI
+# Chroma Walnut UI
 
 > A ChromaDB visual desktop management tool built with PyWebView + React
 
@@ -16,7 +16,7 @@
 
 ## Introduction
 
-Chroma UI is a lightweight desktop client for ChromaDB, running as a native window without a browser. It supports multi-connection management, document browsing and editing, and vector similarity search — ideal for developers debugging and managing ChromaDB data locally.
+Chroma Walnut UI is a lightweight desktop client for ChromaDB, running as a native window without a browser. It supports multi-connection management, document browsing and editing, and vector similarity search — ideal for developers debugging and managing ChromaDB data locally.
 
 ## Features
 
@@ -57,8 +57,8 @@ Chroma UI is a lightweight desktop client for ChromaDB, running as a native wind
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/deepin_sir/chroma-ui.git
-cd chroma-ui
+git clone https://github.com/deepin_sir/chroma-walnut-ui.git
+cd chroma-walnut-ui
 ```
 
 ### 2. Install Python dependencies
@@ -127,12 +127,12 @@ Configs are stored in the user home directory:
 
 | File | Description |
 |---|---|
-| `~/.chroma_ui/connections.json` | All connection configs (Token stored in plain text, local use only) |
-| `~/.chroma_ui/collection_embeddings.json` | Per-collection vector model configs |
+| `~/.chroma_walnut_ui/connections.json` | All connection configs (Token stored in plain text, local use only) |
+| `~/.chroma_walnut_ui/collection_embeddings.json` | Per-collection vector model configs |
 
 ## Vector Model Setup
 
-Chroma UI works with any OpenAI-compatible Embeddings API:
+Chroma Walnut UI works with any OpenAI-compatible Embeddings API:
 
 | Provider | API URL | Model example |
 |---|---|---|
@@ -159,7 +159,7 @@ A: The documents were embedded with a different model/dimension than the one cur
 
 **Q: HTTP connection requires Token authentication?**
 
-A: Fill in the Token field when adding/editing a connection. Chroma UI sends it as `Authorization: Bearer <token>`.
+A: Fill in the Token field when adding/editing a connection. Chroma Walnut UI sends it as `Authorization: Bearer <token>`.
 
 ## Contributing
 

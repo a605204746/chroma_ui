@@ -13,7 +13,7 @@ export default {
     connected: '已连接', connectFailed: '连接失败: {{msg}}',
   },
   overview: {
-    welcome: '欢迎使用 Chroma UI', subtitle: '连接到 ChromaDB 开始管理你的向量数据',
+    welcome: '欢迎使用 Chroma Walnut UI', subtitle: '连接到 ChromaDB 开始管理你的向量数据',
     addConn: '新增连接', connected: '已连接',
     totalCollections: '集合总数', totalDocs: '文档总数', avgDocs: '平均文档数 / 集合',
     collectionList: '集合列表', manage: '管理集合', empty: '暂无集合', view: '查看',
@@ -104,7 +104,7 @@ export default {
     updated: '连接已更新', added: '连接已添加', cancel: '取消', save: '保存',
   },
   system: {
-    title: '系统设置', subtitle: '配置 Chroma UI 的外观与偏好',
+    title: '系统设置', subtitle: '配置 Chroma Walnut UI 的外观与偏好',
     appearance: '外观主题', about: '关于', techStack: '技术栈', docs: 'ChromaDB 官方文档',
   },
 }

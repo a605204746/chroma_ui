@@ -1,4 +1,4 @@
-# Chroma UI
+# Chroma Walnut UI
 
 > 一个基于 PyWebView + React 的 ChromaDB 可视化桌面管理工具
 
@@ -16,7 +16,7 @@
 
 ## 简介
 
-Chroma UI 是一个轻量级的 ChromaDB 桌面客户端，无需浏览器，直接以原生窗口运行。支持多连接管理、文档浏览与编辑、向量相似度搜索等功能，适合开发者在本地调试和管理 ChromaDB 数据。
+Chroma Walnut UI 是一个轻量级的 ChromaDB 桌面客户端，无需浏览器，直接以原生窗口运行。支持多连接管理、文档浏览与编辑、向量相似度搜索等功能，适合开发者在本地调试和管理 ChromaDB 数据。
 
 ## 功能特性
 
@@ -57,8 +57,8 @@ Chroma UI 是一个轻量级的 ChromaDB 桌面客户端，无需浏览器，直
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/deepin_sir/chroma-ui.git
-cd chroma-ui
+git clone https://github.com/deepin_sir/chroma-walnut-ui.git
+cd chroma-walnut-ui
 ```
 
 ### 2. 安装 Python 依赖
@@ -152,12 +152,12 @@ chroma_ui/
 
 | 文件 | 说明 |
 |---|---|
-| `~/.chroma_ui/connections.json` | 所有连接配置（含 Token，明文存储，仅本地使用） |
-| `~/.chroma_ui/collection_embeddings.json` | 各集合的向量模型配置 |
+| `~/.chroma_walnut_ui/connections.json` | 所有连接配置（含 Token，明文存储，仅本地使用） |
+| `~/.chroma_walnut_ui/collection_embeddings.json` | 各集合的向量模型配置 |
 
 ## 向量模型配置说明
 
-Chroma UI 支持任何兼容 OpenAI Embeddings 格式的 API：
+Chroma Walnut UI 支持任何兼容 OpenAI Embeddings 格式的 API：
 
 | 服务 | API 地址 | 模型示例 |
 |---|---|---|
@@ -184,7 +184,7 @@ A: 集合里的文档使用的向量维度与当前配置的模型维度不一�
 
 **Q: HTTP 连接需要 Token 认证？**
 
-A: 在新增/编辑连接时填写 Token 字段，Chroma UI 会自动以 `Authorization: Bearer <token>` 方式发送。
+A: 在新增/编辑连接时填写 Token 字段，Chroma Walnut UI 会自动以 `Authorization: Bearer <token>` 方式发送。
 
 ## 参与贡献
 

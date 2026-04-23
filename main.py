@@ -31,7 +31,7 @@ def main():
 
     api = API()
     window = webview.create_window(
-        title="Chroma UI",
+        title="Chroma Walnut UI",
         url=url,
         js_api=api,
         width=1280,

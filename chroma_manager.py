@@ -22,7 +22,7 @@ class ConnectionConfig:
         return asdict(self)
 
 
-CONFIG_PATH = Path.home() / ".chroma_ui" / "connections.json"
+CONFIG_PATH = Path.home() / ".chroma_walnut_ui" / "connections.json"
 
 ChromaClient = Union[chromadb.HttpClient, chromadb.PersistentClient]
 

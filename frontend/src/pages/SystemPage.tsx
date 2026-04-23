@@ -44,7 +44,7 @@ export default function SystemPage() {
         </Space>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Space><DatabaseOutlined style={{ color: '#8b5cf6' }} /><Typography.Text>Chroma UI</Typography.Text></Space>
+            <Space><DatabaseOutlined style={{ color: '#8b5cf6' }} /><Typography.Text>Chroma Walnut UI</Typography.Text></Space>
             <Tag color="purple">v1.0.0</Tag>
           </div>
           <Divider style={{ margin: 0 }} />

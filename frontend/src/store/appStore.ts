@@ -32,7 +32,7 @@ interface AppState {
   toggleDark: () => void
 }
 
-const savedMode = (localStorage.getItem('chroma-ui-theme') as ThemeMode | null) ?? 'system'
+const savedMode = (localStorage.getItem('chroma-walnut-ui-theme') as ThemeMode | null) ?? 'system'
 
 export const useAppStore = create<AppState>((set, get) => ({
   connections: [],
@@ -58,7 +58,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   backToCollections: () =>
     set({ activeCollection: null, currentNav: 'collections' }),
   setThemeMode: (mode) => {
-    localStorage.setItem('chroma-ui-theme', mode)
+    localStorage.setItem('chroma-walnut-ui-theme', mode)
     set({ themeMode: mode, isDark: resolveIsDark(mode) })
   },
   syncSystemTheme: () => {
@@ -70,7 +70,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   toggleDark: () => {
     const next = !get().isDark
     const mode: ThemeMode = next ? 'dark' : 'light'
-    localStorage.setItem('chroma-ui-theme', mode)
+    localStorage.setItem('chroma-walnut-ui-theme', mode)
     set({ themeMode: mode, isDark: next })
   },
 }))

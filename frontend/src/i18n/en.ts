@@ -13,7 +13,7 @@ export default {
     connected: 'Connected', connectFailed: 'Connect failed: {{msg}}',
   },
   overview: {
-    welcome: 'Welcome to Chroma UI', subtitle: 'Connect to ChromaDB to manage your vector data',
+    welcome: 'Welcome to Chroma Walnut UI', subtitle: 'Connect to ChromaDB to manage your vector data',
     addConn: 'Add Connection', connected: 'Connected',
     totalCollections: 'Collections', totalDocs: 'Total Documents', avgDocs: 'Avg Docs / Collection',
     collectionList: 'Collections', manage: 'Manage', empty: 'No collections', view: 'View',
@@ -104,7 +104,7 @@ export default {
     updated: 'Connection updated', added: 'Connection added', cancel: 'Cancel', save: 'Save',
   },
   system: {
-    title: 'Settings', subtitle: 'Configure Chroma UI appearance and preferences',
+    title: 'Settings', subtitle: 'Configure Chroma Walnut UI appearance and preferences',
     appearance: 'Appearance', about: 'About', techStack: 'Tech Stack', docs: 'ChromaDB Official Docs',
   },
 }

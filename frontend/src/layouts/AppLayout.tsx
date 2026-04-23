@@ -34,7 +34,7 @@ function SettingsPopover() {
 
   const changeLang = (lang: string) => {
     i18n.changeLanguage(lang)
-    localStorage.setItem('chroma-ui-lang', lang)
+    localStorage.setItem('chroma-walnut-ui-lang', lang)
   }
 
   return (
@@ -75,7 +75,7 @@ function SettingsPopover() {
 
       <Divider style={{ margin: '12px 0 8px' }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography.Text type="secondary" style={{ fontSize: 12 }}>Chroma UI</Typography.Text>
+        <Typography.Text type="secondary" style={{ fontSize: 12 }}>Chroma Walnut UI</Typography.Text>
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>v1.0.0</Typography.Text>
       </div>
     </div>
@@ -154,7 +154,7 @@ export default function AppLayout() {
       }}>
         <Space size={10}>
           <Avatar size={26} style={{ background: '#8b5cf6', flexShrink: 0 }} icon={<DatabaseOutlined />} />
-          <Typography.Text strong style={{ fontSize: 15, letterSpacing: -0.3 }}>Chroma UI</Typography.Text>
+          <Typography.Text strong style={{ fontSize: 15, letterSpacing: -0.3 }}>Chroma Walnut UI</Typography.Text>
         </Space>
         <Popover content={<SettingsPopover />} title={null} trigger="click" placement="bottomRight" arrow={false}>
           <Tooltip title={t('settings.title')}>

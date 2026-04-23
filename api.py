@@ -5,7 +5,7 @@ import webview
 from chroma_manager import ChromaManager
 
 # 集合级 embedding 配置：{conn_id:collection_name -> {url, model, api_key}}
-EMBED_CFG_PATH = Path.home() / ".chroma_ui" / "collection_embeddings.json"
+EMBED_CFG_PATH = Path.home() / ".chroma_walnut_ui" / "collection_embeddings.json"
 
 
 def _load_embed_cfg() -> dict:
