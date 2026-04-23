@@ -3,8 +3,8 @@
 Chroma Walnut UI — Windows 一键打包脚本
 
 用法:
-    uv run python build_windows.py
-    python build_windows.py
+    uv run python build_windows.py           # 正式包（无控制台）
+    uv run python build_windows.py --debug   # 调试包（保留控制台，可看错误）
 
 输出:
     dist/ChromaWalnutUI/ChromaWalnutUI.exe  （及其依赖文件）
@@ -18,8 +18,9 @@ from pathlib import Path
 ROOT = Path(__file__).parent
 FRONTEND_DIR = ROOT / "frontend"
 APP_NAME = "ChromaWalnutUI"
-ICON_FILE = ROOT / "_build_icon.ico"   # 构建时临时生成，完成后删除
+ICON_FILE = ROOT / "_build_icon.ico"
 PYTHON = sys.executable
+DEBUG_MODE = "--debug" in sys.argv
 
 
 # ── 输出工具 ──────────────────────────────────────────────────────────────────
@@ -39,7 +40,6 @@ def _fail(msg: str):
     sys.exit(1)
 
 def _run(args, cwd=None):
-    """运行命令；字符串用 shell=True（npm.cmd），列表用 shell=False（Python 可执行文件）。"""
     use_shell = isinstance(args, str)
     result = subprocess.run(args, cwd=cwd, shell=use_shell)
     if result.returncode != 0:
@@ -69,7 +69,6 @@ def check_env():
     )
     if r.returncode != 0:
         _step("PyInstaller 未安装，正在安装…")
-        # uv 环境没有 pip，通过 uv add 安装到项目 venv
         if shutil.which("uv"):
             _run("uv add --dev pyinstaller")
         else:
@@ -111,25 +110,59 @@ def generate_icon():
 
 # ── 步骤 4: PyInstaller 打包 ──────────────────────────────────────────────────
 
+def _force_remove_dist():
+    """强制删除旧的 dist 目录（处理 Windows 文件占用）。"""
+    target = ROOT / "dist" / APP_NAME
+    if not target.exists():
+        return
+    try:
+        shutil.rmtree(target)
+        _ok(f"已清理旧目录: dist/{APP_NAME}/")
+    except PermissionError:
+        _fail(
+            f"无法删除 dist/{APP_NAME}/，该目录被占用。\n"
+            "   请先关闭正在运行的 ChromaWalnutUI.exe，再重新打包。"
+        )
+
+
 def package():
-    _step("PyInstaller 打包 (onedir 模式)")
+    mode_label = "调试模式（含控制台）" if DEBUG_MODE else "正式模式（无控制台）"
+    _step(f"PyInstaller 打包 — {mode_label}")
+
+    _force_remove_dist()   # 先手动清理，避免 PyInstaller --clean 因文件占用报错
 
     frontend_dist = str(FRONTEND_DIR / "dist")
 
     args = [
         PYTHON, "-m", "PyInstaller",
         "--name", APP_NAME,
-        "--windowed",                                       # 无控制台窗口
         "--icon", str(ICON_FILE),
-        "--add-data", f"{frontend_dist};frontend/dist",     # 打包前端资源
-        "--hidden-import", "webview.platforms.winforms",    # PyWebView Windows 后端
+        "--add-data", f"{frontend_dist};frontend/dist",
+
+        # PyWebView Windows 后端
+        "--hidden-import", "webview.platforms.winforms",
         "--hidden-import", "webview.platforms.edgechromium",
-        "--collect-all", "chromadb",                        # ChromaDB 全量收集
-        "--collect-all", "onnxruntime",                     # ONNX Runtime（chromadb 依赖）
+        "--collect-all", "webview",
+
+        # pythonnet（PyWebView 用于驱动 WebView2）
+        "--hidden-import", "clr",
+        "--collect-all", "pythonnet",
+
+        # ChromaDB 全量收集
+        "--collect-all", "chromadb",
+        "--collect-all", "onnxruntime",
+
         "--noconfirm",
         "--clean",
-        str(ROOT / "main.py"),
     ]
+
+    # 正式包隐藏控制台；调试包保留控制台以便查看错误
+    if DEBUG_MODE:
+        args.append("--console")
+    else:
+        args.append("--windowed")
+
+    args.append(str(ROOT / "main.py"))
 
     _run(args, cwd=ROOT)
 
@@ -137,8 +170,7 @@ def package():
     if not exe.exists():
         _fail(f"打包结束但未找到可执行文件: {exe}")
     _ok(f"可执行文件 → dist/{APP_NAME}/{APP_NAME}.exe")
-    dist_dir = exe.parent
-    _ok(f"分发目录大小: {_dir_size(dist_dir)}")
+    _ok(f"分发目录大小: {_dir_size(exe.parent)}")
 
 
 # ── 清理临时文件 ──────────────────────────────────────────────────────────────
@@ -157,6 +189,8 @@ def cleanup():
 
 def main():
     _banner("Chroma Walnut UI — Windows 一键打包")
+    if DEBUG_MODE:
+        print("  [调试模式] 打包结果含控制台窗口，可直接看到 Python 错误信息")
 
     try:
         check_env()
@@ -171,15 +205,20 @@ def main():
         cleanup()
 
     exe = ROOT / "dist" / APP_NAME / f"{APP_NAME}.exe"
+    log_path = Path.home() / ".chroma_walnut_ui" / "error.log"
+
     _banner("打包完成")
     print(f"  可执行文件: {exe}")
     print(f"  分发目录:   {exe.parent}")
     print()
+    if not DEBUG_MODE:
+        print(f"  崩溃日志:   {log_path}")
+        print("  （若启动失败，查看此日志定位原因）")
+        print()
     print("  注意：将整个 dist/ChromaWalnutUI/ 文件夹分发给用户，")
     print("        不要只分发 .exe 单文件，它依赖同目录下的其他文件。")
     print()
-    print("  运行要求：用户 Windows 系统需已安装 Microsoft Edge（WebView2）。")
-    print("            Windows 10 1803+ / Windows 11 默认已内置。")
+    print("  运行要求：Windows 10 1803+ / Windows 11（已内置 WebView2）。")
     print()
 
 
