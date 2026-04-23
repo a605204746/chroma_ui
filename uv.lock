@@ -242,7 +242,7 @@ wheels = [
 ]
 
 [[package]]
-name = "chroma-ui"
+name = "chroma-walnut-ui"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
