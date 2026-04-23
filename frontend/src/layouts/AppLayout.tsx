@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import {
   Layout, Button, Typography, Badge, Tooltip,
-  message, theme, Avatar, Space, Tabs, Tag, Popover, Radio, Divider,
+  message, theme, Space, Tabs, Tag, Popover, Radio, Divider,
 } from 'antd'
 import {
-  DatabaseOutlined, PlusOutlined, DisconnectOutlined,
+  PlusOutlined, DisconnectOutlined,
   LinkOutlined, DeleteOutlined, EditOutlined,
   SunOutlined, MoonOutlined, AppstoreOutlined,
   TableOutlined, SettingOutlined, LaptopOutlined,
 } from '@ant-design/icons'
+import WalnutLogo from '../components/WalnutLogo'
 import { useTranslation } from 'react-i18next'
 import { bridge } from '../api/bridge'
 import { useAppStore } from '../store/appStore'
@@ -153,7 +154,7 @@ export default function AppLayout() {
         height: 52, zIndex: 10,
       }}>
         <Space size={10}>
-          <Avatar size={26} style={{ background: '#8b5cf6', flexShrink: 0 }} icon={<DatabaseOutlined />} />
+          <WalnutLogo size={28} />
           <Typography.Text strong style={{ fontSize: 15, letterSpacing: -0.3 }}>Chroma Walnut UI</Typography.Text>
         </Space>
         <Popover content={<SettingsPopover />} title={null} trigger="click" placement="bottomRight" arrow={false}>

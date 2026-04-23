@@ -1,8 +1,9 @@
 import { Card, Radio, Typography, Space, Divider, Tag, theme } from 'antd'
-import { SunOutlined, MoonOutlined, LaptopOutlined, DatabaseOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import { SunOutlined, MoonOutlined, LaptopOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../store/appStore'
 import type { ThemeMode } from '../store/appStore'
+import WalnutLogo from '../components/WalnutLogo'
 
 export default function SystemPage() {
   const { themeMode, setThemeMode } = useAppStore()
@@ -44,8 +45,8 @@ export default function SystemPage() {
         </Space>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Space><DatabaseOutlined style={{ color: '#8b5cf6' }} /><Typography.Text>Chroma Walnut UI</Typography.Text></Space>
-            <Tag color="purple">v1.0.0</Tag>
+            <Space><WalnutLogo size={18} /><Typography.Text>Chroma Walnut UI</Typography.Text></Space>
+            <Tag color="orange">v1.0.0</Tag>
           </div>
           <Divider style={{ margin: 0 }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -4,6 +4,7 @@ from pathlib import Path
 
 import webview
 from api import API
+from icon_utils import apply_window_icon
 
 DEV_URL = "http://localhost:5173"
 FRONTEND_DIR = Path(__file__).parent / "frontend"
@@ -38,6 +39,7 @@ def main():
         height=800,
         min_size=(900, 600),
     )
+    apply_window_icon()
     webview.start(debug=dev_mode)
 
 

@@ -26,7 +26,7 @@ export default function App() {
       locale={i18n.language === 'en' ? enUS : zhCN}
       theme={{
         algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-        token: { colorPrimary: '#8b5cf6', borderRadius: 6 },
+        token: { colorPrimary: '#C07830', borderRadius: 6 },
       }}
     >
       <AppLayout />

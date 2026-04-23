@@ -9,6 +9,7 @@ import { bridge } from '../api/bridge'
 import { useAppStore } from '../store/appStore'
 import type { Collection } from '../types'
 import type { ColumnsType } from 'antd/es/table'
+import WalnutLogo from '../components/WalnutLogo'
 
 interface Props { onAddConnection: () => void }
 
@@ -83,7 +84,7 @@ export default function OverviewPage({ onAddConnection }: Props) {
   if (!activeConnId) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 16 }}>
-        <DatabaseOutlined style={{ fontSize: 72, color: '#8b5cf6', opacity: 0.6 }} />
+        <WalnutLogo size={88} />
         <Typography.Title level={3} style={{ margin: 0 }}>{t('overview.welcome')}</Typography.Title>
         <Typography.Text type="secondary">{t('overview.subtitle')}</Typography.Text>
         <Button type="primary" size="large" icon={<PlusOutlined />} onClick={onAddConnection}>
@@ -125,7 +126,7 @@ export default function OverviewPage({ onAddConnection }: Props) {
 
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
         <Col span={8}>
-          <StatCard title={t('overview.totalCollections')} value={loading ? '—' : collections.length} icon={<TableOutlined />} color="#8b5cf6" />
+          <StatCard title={t('overview.totalCollections')} value={loading ? '—' : collections.length} icon={<TableOutlined />} color="#C07830" />
         </Col>
         <Col span={8}>
           <StatCard title={t('overview.totalDocs')} value={loading ? '—' : totalDocs.toLocaleString()} icon={<FileTextOutlined />} color="#3b82f6" />
