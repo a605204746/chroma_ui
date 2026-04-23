@@ -8,3 +8,8 @@ dependencies = [
     "chromadb>=0.6",
     "pywebview>=5",
 ]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.20.0",
+]

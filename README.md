@@ -14,6 +14,18 @@
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshot-welcome.png" width="700" alt="Welcome screen" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshot-overview.png" width="700" alt="Overview page" />
+</p>
+
+---
+
 ## Introduction
 
 Chroma Walnut UI is a lightweight desktop client for ChromaDB, running as a native window without a browser. It supports multi-connection management, document browsing and editing, and vector similarity search — ideal for developers debugging and managing ChromaDB data locally.
@@ -100,6 +112,37 @@ npm run dev
 uv run python main.py --dev
 ```
 
+## Building a Windows Executable
+
+Use the included one-click packaging script to produce a standalone `.exe`:
+
+```bash
+uv run python build_windows.py
+```
+
+The script automatically:
+
+1. Checks that Node.js and PyInstaller are available (installs PyInstaller if missing)
+2. Builds the React frontend (`npm run build`)
+3. Generates the walnut `.ico` icon
+4. Packages everything with PyInstaller into `dist/ChromaWalnutUI/`
+
+**Output**
+
+```
+dist/
+└── ChromaWalnutUI/
+    ├── ChromaWalnutUI.exe   ← launch this
+    └── ...                  ← supporting files (must stay alongside the .exe)
+```
+
+> Distribute the entire `dist/ChromaWalnutUI/` folder to end users — the `.exe` depends on files in the same directory.
+
+**End-user requirements**
+
+- Windows 10 1803+ or Windows 11 (WebView2 / Microsoft Edge is built-in)
+- No Python or Node.js installation required
+
 ## Project Structure
 
 ```
@@ -107,6 +150,8 @@ chroma_ui/
 ├── main.py                  # Entry: PyWebView window setup, --dev flag
 ├── api.py                   # Python API layer exposed to JavaScript
 ├── chroma_manager.py        # Multi-connection ChromaDB manager
+├── icon_utils.py            # Pure-Python walnut ICO generator + Win32 icon setter
+├── build_windows.py         # One-click Windows packaging script
 ├── pyproject.toml           # Python project config
 ├── uv.lock                  # uv lockfile
 └── frontend/
@@ -115,7 +160,7 @@ chroma_ui/
     │   ├── store/appStore.ts    # Zustand global state
     │   ├── i18n/                # zh.ts / en.ts translation files
     │   ├── layouts/             # App shell with sidebar
-    │   ├── components/          # Modals, FilterBuilder, ErrorBoundary
+    │   ├── components/          # Modals, WalnutLogo, FilterBuilder, ErrorBoundary
     │   ├── pages/               # Overview, Collections, Detail, Settings
     │   └── tabs/                # Data, Schema, Search tabs
     └── ...
@@ -160,6 +205,10 @@ A: The documents were embedded with a different model/dimension than the one cur
 **Q: HTTP connection requires Token authentication?**
 
 A: Fill in the Token field when adding/editing a connection. Chroma Walnut UI sends it as `Authorization: Bearer <token>`.
+
+**Q: The packaged `.exe` fails to start?**
+
+A: Ensure Microsoft Edge (WebView2 runtime) is installed. On Windows 10 1803+ and Windows 11 it is already built-in. If not, download the [WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/).
 
 ## Contributing
 

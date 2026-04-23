@@ -14,6 +14,18 @@
 
 ---
 
+## 产品截图
+
+<p align="center">
+  <img src="docs/screenshot-welcome.png" width="700" alt="欢迎页" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshot-overview.png" width="700" alt="概览页" />
+</p>
+
+---
+
 ## 简介
 
 Chroma Walnut UI 是一个轻量级的 ChromaDB 桌面客户端，无需浏览器，直接以原生窗口运行。支持多连接管理、文档浏览与编辑、向量相似度搜索等功能，适合开发者在本地调试和管理 ChromaDB 数据。
@@ -100,6 +112,37 @@ npm run dev
 uv run python main.py --dev
 ```
 
+## Windows 打包为可执行文件
+
+使用内置的一键打包脚本，将应用打包成独立的 `.exe`：
+
+```bash
+uv run python build_windows.py
+```
+
+脚本会自动完成以下步骤：
+
+1. 检查 Node.js 与 PyInstaller 是否可用（缺失时自动安装 PyInstaller）
+2. 构建 React 前端（`npm run build`）
+3. 生成核桃 `.ico` 图标
+4. 通过 PyInstaller 将所有内容打包至 `dist/ChromaWalnutUI/`
+
+**输出目录**
+
+```
+dist/
+└── ChromaWalnutUI/
+    ├── ChromaWalnutUI.exe   ← 双击运行
+    └── ...                  ← 依赖文件（必须与 .exe 保持在同一目录）
+```
+
+> 分发时请将整个 `dist/ChromaWalnutUI/` 文件夹提供给用户，不能只给 `.exe` 单文件。
+
+**用户运行要求**
+
+- Windows 10 1803+ 或 Windows 11（已内置 WebView2 / Microsoft Edge）
+- 无需安装 Python 或 Node.js
+
 ## 项目结构
 
 ```
@@ -107,6 +150,8 @@ chroma_ui/
 ├── main.py                  # 入口：PyWebView 窗口创建，--dev 参数控制模式
 ├── api.py                   # Python API 层：暴露给 JS 的所有方法
 ├── chroma_manager.py        # ChromaDB 多连接管理器
+├── icon_utils.py            # 纯 Python 核桃 ICO 生成器 + Win32 图标设置
+├── build_windows.py         # Windows 一键打包脚本
 ├── pyproject.toml           # Python 项目配置
 ├── uv.lock                  # uv 依赖锁文件
 └── frontend/
@@ -129,6 +174,7 @@ chroma_ui/
         ├── layouts/
         │   └── AppLayout.tsx    # 主布局：侧边栏连接列表 + 内容区
         ├── components/
+        │   ├── WalnutLogo.tsx           # 卡通核桃 SVG 组件
         │   ├── ConnectionModal.tsx      # 新增/编辑连接弹窗（含连接测试）
         │   ├── CollectionModal.tsx      # 新建集合弹窗
         │   ├── DocumentModal.tsx        # 新增/编辑文档弹窗（动态键值对 Metadata）
@@ -185,6 +231,10 @@ A: 集合里的文档使用的向量维度与当前配置的模型维度不一�
 **Q: HTTP 连接需要 Token 认证？**
 
 A: 在新增/编辑连接时填写 Token 字段，Chroma Walnut UI 会自动以 `Authorization: Bearer <token>` 方式发送。
+
+**Q: 打包后的 `.exe` 启动失败？**
+
+A: 确认已安装 Microsoft Edge（WebView2 运行时）。Windows 10 1803+ 和 Windows 11 已内置。若未安装，可从 [WebView2 官网](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) 下载。
 
 ## 参与贡献
 
