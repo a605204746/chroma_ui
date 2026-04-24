@@ -29,18 +29,18 @@
 
 ## Introduction
 
-Chroma Walnut UI is a lightweight desktop client for ChromaDB, running as a native window without a browser. It supports multi-connection management, collection browsing and editing, document management, and vector similarity search — ideal for developers debugging and managing ChromaDB data locally.
+Chroma Walnut UI is a lightweight desktop client for ChromaDB, running as a native window without a browser. It supports multi-connection management, collection editing, document CRUD, and vector similarity search — ideal for developers debugging and managing ChromaDB data locally.
 
 ## Features
 
-- **Multi-connection management** — Manage multiple ChromaDB connections (local directory / HTTP service) with Bearer Token auth support, one-click connectivity testing, and collapsible sidebar
-- **Collection management** — Create, edit (rename + metadata), and delete collections; metadata key-value form with duplicate key validation
-- **Document browsing** — Paginated view (10 / 20 / 30 per page) of document IDs, content, and Metadata; color-coded tags; full JSON modal; text selection enabled
-- **Seed test data** — One-click insert of 50 sample documents for quick testing (requires vector model configured)
+- **Multi-connection management** — Manage multiple ChromaDB connections (local directory / HTTP service) with Bearer Token auth, one-click connectivity testing, and collapsible sidebar
+- **Collection management** — Create, edit (rename + Metadata), and delete collections; key-value Metadata form with duplicate key validation
+- **Document browsing** — Paginated view (10 / 20 / 30 per page), showing document ID, content, and color-coded Metadata tags; full JSON modal; text selection enabled
+- **Seed test data** — One-click insert of 50 sample Chinese documents for quick testing (requires vector model configured)
 - **Vector display** — Optional embedding column with preview and one-click copy
-- **Vector search** — Semantic similarity search with filter builder (requires vector model configuration)
-- **Vector model config** — Per-collection OpenAI-compatible embedding API setup, with presets for Ollama / OpenAI / LM Studio / Qwen; auto-detected dimensions after connection test
-- **Schema view** — Collection info, dimension, and inferred metadata field types
+- **Vector search** — Semantic similarity search with multi-condition filter builder (requires vector model configured)
+- **Vector model config** — Per-collection OpenAI-compatible embedding API, with presets for Ollama / OpenAI / LM Studio / Qwen; dimension auto-filled after connection test
+- **Schema view** — Collection info, vector dimension, and inferred Metadata field types
 - **Responsive layout** — Sidebar auto-collapses below 1100 px; fluid font and padding scaling
 - **Single instance** — Prevents duplicate windows via socket lock
 - **Internationalization** — Chinese / English switching
@@ -67,7 +67,7 @@ Chroma Walnut UI is a lightweight desktop client for ChromaDB, running as a nati
 - OS: Windows 10 1803+ / macOS 10.15+ / Ubuntu 20.04+
 
 > **Windows**: WebView2 ships with Microsoft Edge — no extra installation needed.  
-> **macOS**: No additional dependencies required.  
+> **macOS**: No additional system dependencies required.  
 > **Linux**: Requires `libwebkit2gtk-4.1-0` and `libgtk-3-0` system packages.
 
 ## Quick Start
@@ -127,21 +127,15 @@ Use the included cross-platform packaging script. Run it on the target OS — Py
 # Release build (no console window)
 uv run python build.py
 
-# Debug build (console window visible — useful for diagnosing startup errors)
+# Debug build (console visible — useful for diagnosing startup errors)
 uv run python build.py --debug
 ```
 
-The script automatically:
-
-1. Checks Python, Node.js, and PyInstaller (installs if missing)
-2. Builds the React frontend (`npm run build`)
-3. Generates the platform-specific icon (`.ico` / `.icns` / `.png`)
-4. Packages with PyInstaller using the correct platform flags
-5. Archives the output into a distributable file
+The script automatically handles: dependency check → frontend build → icon generation → PyInstaller packaging → archive creation.
 
 ### Output per platform
 
-| Platform | Output directory | Archive |
+| Platform | Output | Archive |
 |---|---|---|
 | Windows | `dist/ChromaWalnutUI/` | `dist/ChromaWalnutUI-Windows.zip` |
 | macOS | `dist/ChromaWalnutUI.app` | `dist/ChromaWalnutUI-macOS.dmg` |
@@ -155,16 +149,18 @@ The script automatically:
 | macOS | macOS 10.15 Catalina+ |
 | Linux | `libwebkit2gtk-4.1-0`, `libgtk-3-0` |
 
+> Windows and macOS packages are self-contained — no Python or Node.js needed on the end-user machine.
+
 ## Automated Releases via GitHub Actions
 
-Pushing a version tag triggers a three-platform build and creates a GitHub Release automatically:
+Pushing a version tag triggers a three-platform parallel build and creates a GitHub Release automatically:
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-The workflow (`.github/workflows/release.yml`) runs `build.py` on `windows-latest`, `macos-latest`, and `ubuntu-22.04` in parallel, then attaches all three archives to the release. Tags containing `-` (e.g. `v1.0.0-beta`) are automatically marked as pre-release.
+The workflow (`.github/workflows/release.yml`) runs `build.py` on `windows-latest`, `macos-latest`, and `ubuntu-24.04` in parallel, then attaches all three archives to the release. Tags containing `-` (e.g. `v1.0.0-beta`) are automatically marked as pre-release.
 
 ## Project Structure
 
@@ -173,7 +169,7 @@ chroma_ui/
 ├── main.py                  # Entry: PyWebView window, single-instance lock, geometry
 ├── api.py                   # Python API layer exposed to JavaScript
 ├── chroma_manager.py        # Multi-connection ChromaDB manager
-├── icon_utils.py            # Pure-Python walnut ICO/ICNS/PNG generator
+├── icon_utils.py            # Pure-Python walnut icon generator (ICO / ICNS / PNG)
 ├── logger.py                # Unified logging (RotatingFileHandler, 5 MB × 3)
 ├── build.py                 # Cross-platform one-click packaging script
 ├── pyproject.toml
@@ -213,14 +209,14 @@ Chroma Walnut UI works with any OpenAI-compatible Embeddings API:
 | LM Studio | `http://localhost:1234/v1/embeddings` | as configured |
 | Qwen (DashScope) | `https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings` | `text-embedding-v3` |
 
-> Click **Test Connection** before saving. The dimension is auto-filled after a successful test.  
-> Each collection can have its own model — make sure it matches the model used when documents were added.
+> Click **Test Connection** before saving — the dimension is auto-filled after a successful test.  
+> Each collection can use a different model; make sure it matches the model used when documents were added.
 
 ## FAQ
 
 **Q: Blank window on startup?**
 
-A: Check that Python dependencies (especially `pywebview`) are installed. Windows users should ensure Edge WebView2 is available. Check `~/.chroma_walnut_ui/app.log` for details.
+A: Check that Python dependencies (especially `pywebview`) are installed. Windows users should verify Edge WebView2 is available. Check `~/.chroma_walnut_ui/app.log` for detailed errors.
 
 **Q: No hot-reload in dev mode?**
 
@@ -228,7 +224,7 @@ A: Make sure `npm run dev` is running inside `frontend/`, and PyWebView is start
 
 **Q: "Dimension mismatch" error during vector search?**
 
-A: The documents were embedded with a different model/dimension. Use the same model that was used when adding the documents.
+A: The documents were embedded with a different model or dimension. Use the same model that was used when the documents were added.
 
 **Q: HTTP connection with Token authentication?**
 
@@ -238,9 +234,9 @@ A: Fill in the Token field when adding/editing a connection. It is sent as `Auth
 
 A: Ensure Microsoft Edge (WebView2 runtime) is installed. On Windows 10 1803+ and Windows 11 it is built-in. Otherwise download the [WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/).
 
-**Q: macOS shows "app is damaged" or security warning?**
+**Q: macOS shows "app is damaged" or a security warning?**
 
-A: The app is not code-signed. Right-click → Open, or go to System Settings → Privacy & Security → Allow. For distribution, sign with `codesign`.
+A: The app is not code-signed. Right-click → Open, or go to System Settings → Privacy & Security → Allow Anyway. For public distribution, sign the `.app` with `codesign`.
 
 ## Contributing
 
