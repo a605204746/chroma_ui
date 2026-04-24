@@ -77,6 +77,35 @@ def build_frontend() -> None:
     log.info("Frontend build complete")
 
 
+def _calc_window_size() -> tuple[int, int]:
+    """根据屏幕分辨率计算最符合人体工程学的初始窗口尺寸。"""
+    try:
+        import ctypes
+        user32 = ctypes.windll.user32
+        # 获取主屏物理像素（考虑 DPI 缩放）
+        user32.SetProcessDPIAware()
+        sw = user32.GetSystemMetrics(0)
+        sh = user32.GetSystemMetrics(1)
+    except Exception:
+        return 1200, 760
+
+    # 黄金比例：宽 75%、高 78%，但不超过舒适上限
+    w = min(int(sw * 0.75), 1500)
+    h = min(int(sh * 0.78), 960)
+
+    # 小屏（笔记本 1366×768 以下）适当收窄
+    if sw <= 1366:
+        w = min(int(sw * 0.88), 1200)
+        h = min(int(sh * 0.85), 720)
+
+    # 保证最小可用尺寸
+    w = max(w, 900)
+    h = max(h, 600)
+
+    log.info("Screen %dx%d → window %dx%d", sw, sh, w, h)
+    return w, h
+
+
 def main():
     try:
         if _FROZEN:
@@ -91,13 +120,14 @@ def main():
             url = str(DIST_INDEX)
             log.info("Running in production mode, url=%s", url)
 
+        win_w, win_h = _calc_window_size()
         api = API()
         webview.create_window(
             title="Chroma Walnut UI",
             url=url,
             js_api=api,
-            width=1280,
-            height=800,
+            width=win_w,
+            height=win_h,
             min_size=(900, 600),
         )
         apply_window_icon()
