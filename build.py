@@ -13,8 +13,14 @@ Chroma Walnut UI — 跨平台一键打包脚本
 """
 import subprocess
 import sys
+import io
 import shutil
 from pathlib import Path
+
+# Windows CI 默认控制台编码是 cp1252，强制 UTF-8 避免中文 UnicodeEncodeError
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).parent
 FRONTEND_DIR = ROOT / "frontend"
@@ -108,8 +114,9 @@ def _check_macos_deps():
 
 def _check_linux_deps():
     """提示 Linux 系统依赖（无法自动安装）。"""
+    # 用当前 Python 检测（兼容 uv --system-site-packages venv）
     r = subprocess.run(
-        ["python3", "-c", "import gi; gi.require_version('Gtk', '3.0'); from gi.repository import Gtk"],
+        [PYTHON, "-c", "import gi; gi.require_version('Gtk', '3.0'); from gi.repository import Gtk"],
         capture_output=True,
     )
     if r.returncode != 0:

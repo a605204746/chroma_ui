@@ -30,6 +30,10 @@ jobs:
 
       - name: Build
         run: uv run python build.py
+        env:
+          # 防止 Windows 控制台 cp1252 编码导致中文 UnicodeEncodeError
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: utf-8
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -100,8 +104,11 @@ jobs:
       - name: Install uv
         run: pip install uv
 
+      # --system-site-packages 让 uv venv 可以访问 apt 安装的 python3-gi
       - name: Install Python dependencies
-        run: uv sync --dev
+        run: |
+          uv venv --system-site-packages
+          uv sync --dev
 
       - name: Build
         run: uv run python build.py
