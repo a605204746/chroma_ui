@@ -10,6 +10,8 @@ dependencies = [
     # macOS WebKit backend
     "pyobjc-framework-Cocoa>=9; sys_platform == 'darwin'",
     "pyobjc-framework-WebKit>=9; sys_platform == 'darwin'",
+    # Linux GTK backend（需要系统预先安装 libgirepository1.0-dev）
+    "PyGObject>=3.42; sys_platform == 'linux'",
 ]
 
 [dependency-groups]
