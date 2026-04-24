@@ -79,7 +79,8 @@ jobs:
   # ─── Linux ──────────────────────────────────────────────────────────────────
   build-linux:
     name: Build (Linux)
-    runs-on: ubuntu-22.04
+    # Ubuntu 24.04 带 GLib 2.80+ / girepository-2.0，匹配 PyGObject 3.52+
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -96,7 +97,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            libgirepository1.0-dev gcc \
+            libgirepository-2.0-dev gcc \
             libcairo2-dev pkg-config python3-dev \
             gir1.2-gtk-3.0 gir1.2-webkit2-4.1 \
             libwebkit2gtk-4.1-dev
