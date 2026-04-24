@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Layout, Button, Typography, Badge, Tooltip,
   message, theme, Space, Tabs, Tag, Popover, Radio, Divider,
@@ -8,6 +8,7 @@ import {
   LinkOutlined, DeleteOutlined, EditOutlined,
   SunOutlined, MoonOutlined, AppstoreOutlined,
   TableOutlined, SettingOutlined, LaptopOutlined,
+  MenuFoldOutlined, MenuUnfoldOutlined,
 } from '@ant-design/icons'
 import WalnutLogo from '../components/WalnutLogo'
 import { useTranslation } from 'react-i18next'
@@ -21,6 +22,10 @@ import CollectionsPage from '../pages/CollectionsPage'
 import CollectionDetailPage from '../pages/CollectionDetailPage'
 
 const { Sider, Content, Header } = Layout
+
+const SIDER_WIDTH = 220
+const SIDER_COLLAPSED_WIDTH = 60
+const COLLAPSE_BREAKPOINT = 1100
 
 function SettingsPopover() {
   const { themeMode, setThemeMode } = useAppStore()
@@ -93,7 +98,16 @@ export default function AppLayout() {
 
   const [connModalOpen, setConnModalOpen] = useState(false)
   const [editingConn, setEditingConn] = useState<Connection | null>(null)
+  const [collapsed, setCollapsed] = useState(false)
   const { token } = theme.useToken()
+
+  // 小窗口自动折叠侧边栏
+  useEffect(() => {
+    const check = () => setCollapsed(window.innerWidth < COLLAPSE_BREAKPOINT)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const handleConnect = async (id: string) => {
     const res = await bridge.connect(id)
@@ -149,13 +163,23 @@ export default function AppLayout() {
     <Layout style={{ height: '100vh' }}>
       <Header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 20px', background: token.colorBgContainer,
+        padding: '0 16px', background: token.colorBgContainer,
         borderBottom: `1px solid ${token.colorBorderSecondary}`,
-        height: 52, zIndex: 10,
+        height: 48, minHeight: 48, zIndex: 10, flexShrink: 0,
       }}>
-        <Space size={10}>
-          <WalnutLogo size={28} />
-          <Typography.Text strong style={{ fontSize: 15, letterSpacing: -0.3 }}>Chroma Walnut UI</Typography.Text>
+        <Space size={8}>
+          <Button
+            type="text" size="small"
+            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={() => setCollapsed(v => !v)}
+            style={{ color: token.colorTextSecondary }}
+          />
+          <WalnutLogo size={26} />
+          {!collapsed && (
+            <Typography.Text strong style={{ fontSize: 14, letterSpacing: -0.3 }}>
+              Chroma Walnut UI
+            </Typography.Text>
+          )}
         </Space>
         <Popover content={<SettingsPopover />} title={null} trigger="click" placement="bottomRight" arrow={false}>
           <Tooltip title={t('settings.title')}>
@@ -164,84 +188,109 @@ export default function AppLayout() {
         </Popover>
       </Header>
 
-      <Layout>
-        <Sider width={220} style={{
-          background: token.colorBgContainer,
-          borderRight: `1px solid ${token.colorBorderSecondary}`,
-          display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        }}>
+      <Layout style={{ overflow: 'hidden' }}>
+        <Sider
+          width={SIDER_WIDTH}
+          collapsedWidth={SIDER_COLLAPSED_WIDTH}
+          collapsed={collapsed}
+          style={{
+            background: token.colorBgContainer,
+            borderRight: `1px solid ${token.colorBorderSecondary}`,
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            transition: 'width 0.2s',
+            flexShrink: 0,
+          }}
+        >
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px 16px 8px',
+            display: 'flex', alignItems: 'center',
+            justifyContent: collapsed ? 'center' : 'space-between',
+            padding: collapsed ? '10px 0' : '10px 12px 8px',
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
           }}>
-            <Typography.Text strong style={{ fontSize: 13 }}>{t('conn.title')}</Typography.Text>
+            {!collapsed && (
+              <Typography.Text strong style={{ fontSize: 12 }}>{t('conn.title')}</Typography.Text>
+            )}
             <Tooltip title={t('conn.addTip')}>
               <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openAdd} />
             </Tooltip>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px' }}>
-            {connections.length === 0 && (
-              <div style={{ padding: '24px 8px', textAlign: 'center' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: collapsed ? '6px 4px' : '6px 8px' }}>
+            {connections.length === 0 && !collapsed && (
+              <div style={{ padding: '20px 8px', textAlign: 'center' }}>
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t('conn.empty')}</Typography.Text>
               </div>
             )}
             {connections.map(conn => {
               const isActive = conn.id === activeConnId
               return (
-                <div
+                <Tooltip
                   key={conn.id}
-                  onClick={() => conn.connected ? setActiveConnId(conn.id) : handleConnect(conn.id)}
-                  style={{
-                    borderRadius: 8, marginBottom: 4,
-                    border: `1px solid ${isActive ? token.colorPrimary : token.colorBorderSecondary}`,
-                    background: isActive ? token.colorPrimaryBg : token.colorBgContainer,
-                    overflow: 'hidden', cursor: 'pointer', padding: '8px 10px',
-                  }}
+                  title={collapsed ? conn.name : undefined}
+                  placement="right"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <Badge status={conn.connected ? 'success' : 'default'} />
-                    <Typography.Text
-                      ellipsis strong={isActive}
-                      style={{ flex: 1, fontSize: 13, color: isActive ? token.colorPrimary : token.colorText }}
-                    >
-                      {conn.name}
-                    </Typography.Text>
-                    <Tag color={connTypeColor(conn)} style={{ fontSize: 10, padding: '0 4px', lineHeight: '16px', margin: 0 }}>
-                      {connTypeLabel(conn)}
-                    </Tag>
+                  <div
+                    onClick={() => conn.connected ? setActiveConnId(conn.id) : handleConnect(conn.id)}
+                    style={{
+                      borderRadius: 8, marginBottom: 4,
+                      border: `1px solid ${isActive ? token.colorPrimary : token.colorBorderSecondary}`,
+                      background: isActive ? token.colorPrimaryBg : token.colorBgContainer,
+                      overflow: 'hidden', cursor: 'pointer',
+                      padding: collapsed ? '8px 4px' : '8px 10px',
+                    }}
+                  >
+                    {collapsed ? (
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <Badge status={conn.connected ? 'success' : 'default'} />
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                          <Badge status={conn.connected ? 'success' : 'default'} />
+                          <Typography.Text
+                            ellipsis strong={isActive}
+                            style={{ flex: 1, fontSize: 12, color: isActive ? token.colorPrimary : token.colorText }}
+                          >
+                            {conn.name}
+                          </Typography.Text>
+                          <Tag color={connTypeColor(conn)} style={{ fontSize: 10, padding: '0 4px', lineHeight: '16px', margin: 0 }}>
+                            {connTypeLabel(conn)}
+                          </Tag>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                          <Tooltip title={conn.connected ? t('conn.disconnect') : t('conn.connect')}>
+                            <Button
+                              size="small" type="text"
+                              icon={conn.connected ? <DisconnectOutlined /> : <LinkOutlined />}
+                              onClick={e => { e.stopPropagation(); conn.connected ? handleDisconnect(conn.id) : handleConnect(conn.id) }}
+                              style={{ color: conn.connected ? token.colorError : token.colorSuccess }}
+                            />
+                          </Tooltip>
+                          <Tooltip title={t('conn.edit')}>
+                            <Button size="small" type="text" icon={<EditOutlined />}
+                              onClick={e => { e.stopPropagation(); openEdit(conn) }} />
+                          </Tooltip>
+                          <Tooltip title={t('conn.delete')}>
+                            <Button size="small" type="text" danger icon={<DeleteOutlined />}
+                              onClick={e => { e.stopPropagation(); handleRemoveConn(conn.id) }} />
+                          </Tooltip>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                    <Tooltip title={conn.connected ? t('conn.disconnect') : t('conn.connect')}>
-                      <Button
-                        size="small" type="text"
-                        icon={conn.connected ? <DisconnectOutlined /> : <LinkOutlined />}
-                        onClick={e => { e.stopPropagation(); conn.connected ? handleDisconnect(conn.id) : handleConnect(conn.id) }}
-                        style={{ color: conn.connected ? token.colorError : token.colorSuccess }}
-                      />
-                    </Tooltip>
-                    <Tooltip title={t('conn.edit')}>
-                      <Button size="small" type="text" icon={<EditOutlined />}
-                        onClick={e => { e.stopPropagation(); openEdit(conn) }} />
-                    </Tooltip>
-                    <Tooltip title={t('conn.delete')}>
-                      <Button size="small" type="text" danger icon={<DeleteOutlined />}
-                        onClick={e => { e.stopPropagation(); handleRemoveConn(conn.id) }} />
-                    </Tooltip>
-                  </div>
-                </div>
+                </Tooltip>
               )
             })}
           </div>
         </Sider>
 
-        <Layout style={{ background: token.colorBgLayout }}>
+        <Layout style={{ background: token.colorBgLayout, overflow: 'hidden', minWidth: 0 }}>
           {activeConnId && (
             <div style={{
               background: token.colorBgContainer,
               borderBottom: `1px solid ${token.colorBorderSecondary}`,
-              padding: '0 24px',
+              padding: '0 16px',
+              flexShrink: 0,
             }}>
               <Tabs
                 activeKey={activeTabKey}
@@ -255,7 +304,7 @@ export default function AppLayout() {
               />
             </div>
           )}
-          <Content style={{ padding: 24, overflow: 'auto' }}>
+          <Content className="content-area" style={{ overflow: 'auto', minWidth: 0 }}>
             {renderContent()}
           </Content>
         </Layout>

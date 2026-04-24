@@ -62,7 +62,8 @@ export const bridge = {
   pickDirectory: () => getApi().then(a => a.pick_directory()),
 
   listCollections: (conn_id: string) => getApi().then(a => a.list_collections(conn_id)),
-  createCollection: (conn_id: string, name: string) => getApi().then(a => a.create_collection(conn_id, name)),
+  createCollection: (conn_id: string, name: string, metadata_json = '') => getApi().then(a => a.create_collection(conn_id, name, metadata_json)),
+  modifyCollection: (conn_id: string, old_name: string, new_name: string, metadata_json = '') => getApi().then(a => a.modify_collection(conn_id, old_name, new_name, metadata_json)),
   deleteCollection: (conn_id: string, name: string) => getApi().then(a => a.delete_collection(conn_id, name)),
   getCollectionInfo: (conn_id: string, name: string) => getApi().then(a => a.get_collection_info(conn_id, name)),
 
@@ -75,6 +76,8 @@ export const bridge = {
   testEmbedding: (conn_id: string, collection: string, text: string) =>
     getApi().then(a => a.test_embedding(conn_id, collection, text)),
 
+  seedTestData: (conn_id: string, collection: string) =>
+    getApi().then(a => a.seed_test_data(conn_id, collection)),
   getDocuments: (conn_id: string, collection: string, limit: number, offset: number, includeEmbeddings?: boolean) =>
     getApi().then(a => a.get_documents(conn_id, collection, limit, offset, includeEmbeddings ?? false)),
   addDocument: (conn_id: string, collection: string, doc_id: string, document: string, metadata_json: string) =>

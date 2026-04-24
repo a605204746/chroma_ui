@@ -3,7 +3,7 @@ import {
   Table, Button, Space, Popconfirm, message, Typography, Tag,
   Input, Switch, Modal, theme, Tooltip, Alert,
 } from 'antd'
-import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, ApartmentOutlined, CopyOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, ApartmentOutlined, CodeOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import type { ColumnsType } from 'antd/es/table'
 import type { Document } from '../types'
@@ -31,6 +31,8 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
   const [editDoc, setEditDoc] = useState<Document | null>(null)
   const [showEmbedding, setShowEmbedding] = useState(false)
   const [embViewDoc, setEmbViewDoc] = useState<Document | null>(null)
+  const [metaViewDoc, setMetaViewDoc] = useState<Document | null>(null)
+  const [seeding, setSeeding] = useState(false)
 
   const loadDocs = useCallback(async (p = page, withEmb = showEmbedding) => {
     if (!activeConnId || !activeCollection) return
@@ -72,6 +74,36 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
     setModalOpen(true)
   }
 
+  const handleSeed = () => {
+    if (!hasEmbedding) {
+      Modal.warning({
+        title: t('data.requireEmbed'),
+        content: t('data.requireEmbedDesc'),
+        okText: t('data.configure'),
+        onOk: onConfigEmbed,
+      })
+      return
+    }
+    Modal.confirm({
+      title: t('data.seedBtn'),
+      content: t('data.seedConfirm'),
+      okText: t('data.seedBtn'),
+      cancelText: t('connModal.cancel'),
+      onOk: async () => {
+        if (!activeConnId || !activeCollection) return
+        setSeeding(true)
+        try {
+          const res = await bridge.seedTestData(activeConnId, activeCollection)
+          if (res.error || res.success === false) { message.error(res.error); return }
+          message.success(t('data.seedSuccess', { n: res.count }))
+          loadDocs(1, showEmbedding)
+        } finally {
+          setSeeding(false)
+        }
+      },
+    })
+  }
+
   const copyText = (text: string, successMsg: string) => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(() => message.success(successMsg))
@@ -95,30 +127,19 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
     dataIndex: 'embedding',
     key: 'embedding',
     width: 180,
-    render: (emb: number[] | null | undefined) => {
+    render: (emb: number[] | null | undefined, record: Document) => {
       if (!emb || emb.length === 0) return <Typography.Text type="secondary">—</Typography.Text>
       const fmt = (v: number, d: number) => (typeof v === 'number' && isFinite(v)) ? v.toFixed(d) : String(v)
       const preview = emb.slice(0, 4).map(v => fmt(v, 4)).join(', ')
-      const tooltipContent = (
-        <span style={{ fontFamily: 'monospace', fontSize: 11 }}>
-          {emb.length} {t('embed.dimensionUnit')} &nbsp;|&nbsp; {emb.slice(0, 8).map(v => fmt(v, 6)).join(', ')}{emb.length > 8 ? ` … (${emb.length})` : ''}
-        </span>
-      )
       return (
-        <Space size={4}>
-          <Tooltip title={tooltipContent} placement="topLeft">
-            <Space size={4} style={{ cursor: 'default' }}>
-              <Tag color="purple" style={{ fontFamily: 'monospace', fontSize: 11 }}>{emb.length}d</Tag>
-              <Typography.Text type="secondary" style={{ fontSize: 11, fontFamily: 'monospace' }}>{preview}…</Typography.Text>
-            </Space>
-          </Tooltip>
-          <Tooltip title={t('data.copyVec')}>
-            <Button
-              size="small" type="text" icon={<CopyOutlined style={{ fontSize: 11 }} />}
-              style={{ padding: '0 2px', height: 18 }}
-              onClick={() => copyText(JSON.stringify(emb), t('data.vecCopied'))}
-            />
-          </Tooltip>
+        <Space size={4} style={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+          <Tag color="purple" style={{ fontFamily: 'monospace', fontSize: 11, margin: 0 }}>{emb.length}d</Tag>
+          <Typography.Text type="secondary" style={{ fontSize: 11, fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{preview}…</Typography.Text>
+          <Button
+            size="small" type="text" icon={<ApartmentOutlined style={{ fontSize: 11 }} />}
+            style={{ padding: '0 2px', height: 18, flexShrink: 0 }}
+            onClick={() => setEmbViewDoc(record)}
+          />
         </Space>
       )
     },
@@ -134,14 +155,17 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
       ),
     },
     {
-      title: 'Document', dataIndex: 'document', key: 'document', ellipsis: { showTitle: false },
+      title: 'Document', dataIndex: 'document', key: 'document', width: 420,
+      ellipsis: { showTitle: false },
       render: (doc: string) => (
-        <Typography.Text copyable={{ tooltips: false }} ellipsis={{ tooltip: doc }} style={{ fontSize: 13 }}>{doc}</Typography.Text>
+        <Typography.Text copyable={{ text: doc, tooltips: false }} style={{ fontSize: 13, whiteSpace: 'nowrap' }}>
+          {doc.length > 35 ? doc.slice(0, 35) + '…' : doc}
+        </Typography.Text>
       ),
     },
     {
       title: 'Metadata', dataIndex: 'metadata', key: 'metadata', width: 200,
-      render: (meta: Record<string, unknown> | null | undefined) => {
+      render: (meta: Record<string, unknown> | null | undefined, record: Document) => {
         const entries = Object.entries(meta ?? {})
         if (entries.length === 0) return <Typography.Text type="secondary">—</Typography.Text>
         const tagColor = (v: unknown) => {
@@ -151,11 +175,15 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
           return 'blue'
         }
         return (
-          <Space wrap size={4}>
-            {entries.slice(0, 3).map(([k, v]) => (
+          <Space size={4} style={{ flexWrap: 'nowrap' }}>
+            {entries.slice(0, 2).map(([k, v]) => (
               <Tag key={k} color={tagColor(v)} style={{ fontSize: 11 }}>{k}: {String(v)}</Tag>
             ))}
-            {entries.length > 3 && <Tag>+{entries.length - 3}</Tag>}
+            <Button
+              size="small" type="text" icon={<CodeOutlined style={{ fontSize: 11 }} />}
+              style={{ padding: '0 2px', height: 20, flexShrink: 0 }}
+              onClick={() => setMetaViewDoc(record)}
+            />
           </Space>
         )
       },
@@ -163,12 +191,9 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
   ]
 
   const actionCol: ColumnsType<Document>[number] = {
-    title: t('collections.action'), key: 'action', width: showEmbedding ? 110 : 90, fixed: 'right',
+    title: t('collections.action'), key: 'action', width: 80, fixed: 'right',
     render: (_, record) => (
       <Space>
-        {showEmbedding && record.embedding && (
-          <Button size="small" type="text" icon={<ApartmentOutlined />} title={t('data.viewVec')} onClick={() => setEmbViewDoc(record)} />
-        )}
         <Button size="small" type="text" icon={<EditOutlined />} onClick={() => { setEditDoc(record); setModalOpen(true) }} />
         <Popconfirm title={t('data.deleteConfirm')} onConfirm={() => handleDelete(record.id)} okText={t('collection.deleteCollection').slice(0, 2)} okType="danger" cancelText={t('connModal.cancel')}>
           <Button size="small" type="text" danger icon={<DeleteOutlined />} />
@@ -204,6 +229,7 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
             value={search} onChange={e => setSearch(e.target.value)} style={{ width: 220 }} allowClear
           />
           <Button onClick={() => loadDocs()} loading={loading}>{t('data.refresh')}</Button>
+          <Button icon={<ThunderboltOutlined />} onClick={handleSeed} loading={seeding}>{t('data.seedBtn')}</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAddClick}>{t('data.addDoc')}</Button>
         </Space>
       </div>
@@ -245,6 +271,28 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
             <div style={{ marginTop: 8, textAlign: 'right' }}>
               <Button size="small" onClick={() => copyText(JSON.stringify(embViewDoc.embedding), t('data.allCopied'))}>
                 {t('data.copyVec')}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+      <Modal
+        title={<Space><CodeOutlined /><span>{t('data.metaModal')}</span></Space>}
+        open={!!metaViewDoc} onCancel={() => setMetaViewDoc(null)} footer={null} width={520}
+      >
+        {metaViewDoc && (
+          <div>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>ID: {metaViewDoc.id}</Typography.Text>
+            <div style={{
+              marginTop: 12, background: token.colorFillAlter, borderRadius: 6,
+              padding: '12px 16px', maxHeight: 400, overflowY: 'auto',
+              fontFamily: 'monospace', fontSize: 13, lineHeight: 1.8, wordBreak: 'break-all',
+            }}>
+              {JSON.stringify(metaViewDoc.metadata ?? {}, null, 2)}
+            </div>
+            <div style={{ marginTop: 8, textAlign: 'right' }}>
+              <Button size="small" onClick={() => copyText(JSON.stringify(metaViewDoc.metadata ?? {}), t('data.allCopied'))}>
+                {t('data.copyMeta')}
               </Button>
             </div>
           </div>

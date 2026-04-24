@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Table, Button, Space, Popconfirm, message, Typography, Tag, Card, Input } from 'antd'
-import { PlusOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, EditOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import type { ColumnsType } from 'antd/es/table'
 import type { Collection } from '../types'
@@ -13,6 +13,7 @@ export default function CollectionsPage() {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [editCollection, setEditCollection] = useState<Collection | null>(null)
   const [search, setSearch] = useState('')
 
   const loadCollections = async () => {
@@ -35,6 +36,9 @@ export default function CollectionsPage() {
     message.success(t('collections.deleteSuccess', { name }))
     loadCollections()
   }
+
+  const openCreate = () => { setEditCollection(null); setModalOpen(true) }
+  const openEdit = (col: Collection) => { setEditCollection(col); setModalOpen(true) }
 
   const filtered = collections.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
 
@@ -61,10 +65,11 @@ export default function CollectionsPage() {
       },
     },
     {
-      title: t('collections.action'), key: 'action', width: 140,
+      title: t('collections.action'), key: 'action', width: 160,
       render: (_, record) => (
         <Space>
           <Button size="small" type="link" onClick={() => navigateToCollection(record.name)}>{t('collections.view')}</Button>
+          <Button size="small" type="text" icon={<EditOutlined />} onClick={() => openEdit(record)} />
           <Popconfirm
             title={t('collections.deleteConfirm', { name: record.name })}
             description={t('collections.deleteDesc')}
@@ -73,7 +78,7 @@ export default function CollectionsPage() {
             okType="danger"
             cancelText={t('connModal.cancel')}
           >
-            <Button size="small" type="link" danger icon={<DeleteOutlined />} />
+            <Button size="small" type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       ),
@@ -93,7 +98,7 @@ export default function CollectionsPage() {
             value={search} onChange={e => setSearch(e.target.value)} style={{ width: 200 }} allowClear
           />
           <Button icon={<ReloadOutlined />} onClick={loadCollections} loading={loading} />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
             {t('collections.create')}
           </Button>
         </Space>
@@ -103,12 +108,16 @@ export default function CollectionsPage() {
         <Table
           columns={columns} dataSource={filtered} rowKey="name" loading={loading}
           pagination={{ pageSize: 15, showTotal: n => t('collections.total', { n }) }}
-          onRow={record => ({ onDoubleClick: () => navigateToCollection(record.name) })}
           locale={{ emptyText: t('collections.empty') }}
         />
       </Card>
 
-      <CollectionModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <CollectionModal
+        open={modalOpen}
+        editCollection={editCollection}
+        onClose={() => setModalOpen(false)}
+        onSaved={loadCollections}
+      />
     </div>
   )
 }
