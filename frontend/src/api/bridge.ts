@@ -17,9 +17,11 @@ interface PythonAPI {
   pick_directory(): Promise<string | null>
 
   list_collections(conn_id: string): Promise<Collection[]>
-  create_collection(conn_id: string, name: string): Promise<{ success: boolean; error?: string }>
+  create_collection(conn_id: string, name: string, metadata_json?: string): Promise<{ success: boolean; name?: string; error?: string }>
+  modify_collection(conn_id: string, old_name: string, new_name: string, metadata_json?: string): Promise<{ success: boolean; name?: string; error?: string }>
   delete_collection(conn_id: string, name: string): Promise<{ success: boolean; error?: string }>
   get_collection_info(conn_id: string, name: string): Promise<Collection>
+  seed_test_data(conn_id: string, collection: string): Promise<{ success: boolean; count?: number; error?: string }>
 
   get_collection_embedding(conn_id: string, collection: string): Promise<EmbeddingConfig>
   set_collection_embedding(conn_id: string, collection: string, embedding_url: string, embedding_model: string, embedding_api_key: string, dimension?: number): Promise<{ success: boolean }>
