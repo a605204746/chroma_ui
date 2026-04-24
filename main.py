@@ -77,36 +77,63 @@ def build_frontend() -> None:
     log.info("Frontend build complete")
 
 
-def _calc_window_size() -> tuple[int, int]:
-    """根据屏幕分辨率计算最符合人体工程学的初始窗口尺寸。"""
+def _calc_window_geometry() -> tuple[int, int, int, int]:
+    """根据屏幕分辨率计算窗口尺寸和居中坐标，返回 (w, h, x, y)。"""
     try:
         import ctypes
-        user32 = ctypes.windll.user32
-        # 获取主屏物理像素（考虑 DPI 缩放）
-        user32.SetProcessDPIAware()
-        sw = user32.GetSystemMetrics(0)
-        sh = user32.GetSystemMetrics(1)
+        # 不设置 DPI 感知，GetSystemMetrics 返回逻辑像素，与 PyWebView 坐标系一致
+        sw = ctypes.windll.user32.GetSystemMetrics(0)
+        sh = ctypes.windll.user32.GetSystemMetrics(1)
     except Exception:
-        return 1200, 760
+        return 1200, 760, 60, 40
 
-    # 黄金比例：宽 75%、高 78%，但不超过舒适上限
-    w = min(int(sw * 0.75), 1500)
-    h = min(int(sh * 0.78), 960)
-
-    # 小屏（笔记本 1366×768 以下）适当收窄
     if sw <= 1366:
         w = min(int(sw * 0.88), 1200)
         h = min(int(sh * 0.85), 720)
+    else:
+        w = min(int(sw * 0.75), 1500)
+        h = min(int(sh * 0.78), 960)
 
-    # 保证最小可用尺寸
     w = max(w, 900)
     h = max(h, 600)
+    x = (sw - w) // 2
+    y = (sh - h) // 2
 
-    log.info("Screen %dx%d → window %dx%d", sw, sh, w, h)
-    return w, h
+    log.info("Screen %dx%d → window %dx%d at (%d,%d)", sw, sh, w, h, x, y)
+    return w, h, x, y
+
+
+# 单实例锁：绑定一个本地端口，进程退出时自动释放
+_INSTANCE_PORT = 19527
+_instance_sock: socket.socket | None = None
+
+
+def _acquire_instance_lock() -> bool:
+    """尝试获取单实例锁，返回 True 表示成功（当前是唯一实例）。"""
+    global _instance_sock
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+        s.bind(("127.0.0.1", _INSTANCE_PORT))
+        s.listen(1)
+        _instance_sock = s
+        return True
+    except OSError:
+        return False
 
 
 def main():
+    if not _acquire_instance_lock():
+        log.warning("Another instance is already running, exiting.")
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(
+            0,
+            "Chroma Walnut UI 已在运行中，请勿重复打开。",
+            "Chroma Walnut UI",
+            0x30,  # MB_ICONWARNING
+        )
+        return
+
     try:
         if _FROZEN:
             url = str(DIST_INDEX)
@@ -120,7 +147,7 @@ def main():
             url = str(DIST_INDEX)
             log.info("Running in production mode, url=%s", url)
 
-        win_w, win_h = _calc_window_size()
+        win_w, win_h, win_x, win_y = _calc_window_geometry()
         api = API()
         webview.create_window(
             title="Chroma Walnut UI",
@@ -128,6 +155,8 @@ def main():
             js_api=api,
             width=win_w,
             height=win_h,
+            x=win_x,
+            y=win_y,
             min_size=(900, 600),
         )
         apply_window_icon()

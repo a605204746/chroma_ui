@@ -9,6 +9,7 @@ export default {
   conn: {
     title: 'Connections', addTip: 'Add Connection', empty: 'No connections. Click + to add.',
     connect: 'Connect', disconnect: 'Disconnect', edit: 'Edit', delete: 'Delete',
+    deleteConfirm: 'Delete this connection?', deleteDesc: 'This action cannot be undone.', deleteOk: 'Delete',
     httpLocal: 'HTTP Local', httpRemote: 'HTTP Remote', localDir: 'Local Dir', localFile: 'Local File', http: 'HTTP Service',
     connected: 'Connected', connectFailed: 'Connect failed: {{msg}}',
   },

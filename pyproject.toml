@@ -7,6 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
     "chromadb>=0.6",
     "pywebview>=5",
+    # macOS WebKit backend
+    "pyobjc-framework-Cocoa>=9; sys_platform == 'darwin'",
+    "pyobjc-framework-WebKit>=9; sys_platform == 'darwin'",
 ]
 
 [dependency-groups]

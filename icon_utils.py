@@ -1,4 +1,4 @@
-"""Generate and apply the walnut window icon (Windows)."""
+"""Generate and apply the walnut window icon (cross-platform)."""
 import sys
 import struct
 import zlib
@@ -106,6 +106,21 @@ def _make_walnut_ico() -> bytes:
     offset = 6 + 16
     entry = struct.pack('<BBBBHHII', 0, 0, 0, 0, 1, 32, len(png), offset)
     return header + entry + png
+
+
+def _make_walnut_icns() -> bytes:
+    """Wrap PNG images in an ICNS container (macOS format)."""
+    def icns_entry(type_code: bytes, png_data: bytes) -> bytes:
+        entry_len = 8 + len(png_data)
+        return type_code + struct.pack('>I', entry_len) + png_data
+
+    # ic07=128×128, ic08=256×256
+    entries = (
+        icns_entry(b'ic07', _make_walnut_png(128))
+        + icns_entry(b'ic08', _make_walnut_png(256))
+    )
+    total_len = 8 + len(entries)
+    return b'icns' + struct.pack('>I', total_len) + entries
 
 
 def ensure_icon() -> Path:

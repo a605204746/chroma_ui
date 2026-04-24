@@ -9,6 +9,7 @@ export default {
   conn: {
     title: '连接', addTip: '新增连接', empty: '暂无连接，点击 + 新增',
     connect: '连接', disconnect: '断开', edit: '编辑', delete: '删除',
+    deleteConfirm: '确认删除此连接？', deleteDesc: '删除后连接配置将无法恢复。', deleteOk: '删除',
     httpLocal: 'HTTP 本地', httpRemote: 'HTTP 远程', localDir: '本地目录', localFile: '本地文件', http: 'HTTP 服务',
     connected: '已连接', connectFailed: '连接失败: {{msg}}',
   },

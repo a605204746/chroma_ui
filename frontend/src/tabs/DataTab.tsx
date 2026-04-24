@@ -11,7 +11,7 @@ import { bridge } from '../api/bridge'
 import { useAppStore } from '../store/appStore'
 import DocumentModal from '../components/DocumentModal'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE_OPTIONS = [10, 20, 30]
 
 interface Props {
   hasEmbedding: boolean
@@ -26,6 +26,7 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
   const [docs, setDocs] = useState<Document[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editDoc, setEditDoc] = useState<Document | null>(null)
@@ -34,18 +35,18 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
   const [metaViewDoc, setMetaViewDoc] = useState<Document | null>(null)
   const [seeding, setSeeding] = useState(false)
 
-  const loadDocs = useCallback(async (p = page, withEmb = showEmbedding) => {
+  const loadDocs = useCallback(async (p = page, withEmb = showEmbedding, ps = pageSize) => {
     if (!activeConnId || !activeCollection) return
     setLoading(true)
     try {
-      const res = await bridge.getDocuments(activeConnId, activeCollection, PAGE_SIZE, (p - 1) * PAGE_SIZE, withEmb)
+      const res = await bridge.getDocuments(activeConnId, activeCollection, ps, (p - 1) * ps, withEmb)
       if (res.error) { message.error(res.error); return }
       setDocs(res.items ?? [])
       setTotal(res.total ?? 0)
     } finally {
       setLoading(false)
     }
-  }, [activeConnId, activeCollection, page, showEmbedding])
+  }, [activeConnId, activeCollection, page, pageSize, showEmbedding])
 
   useEffect(() => { setPage(1); loadDocs(1, showEmbedding) }, [activeConnId, activeCollection])
   useEffect(() => { loadDocs(page, showEmbedding) }, [page])
@@ -238,10 +239,14 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
         columns={columns} dataSource={filtered} rowKey="id" loading={loading} size="small"
         scroll={{ x: 'max-content' }}
         pagination={{
-          current: page, pageSize: PAGE_SIZE, total,
-          onChange: p => setPage(p),
+          current: page, pageSize, total,
+          pageSizeOptions: PAGE_SIZE_OPTIONS,
+          showSizeChanger: true,
+          onChange: (p, ps) => {
+            if (ps !== pageSize) { setPageSize(ps); setPage(1); loadDocs(1, showEmbedding, ps) }
+            else setPage(p)
+          },
           showTotal: n => t('data.rowTotal', { n }),
-          showSizeChanger: false,
         }}
       />
 

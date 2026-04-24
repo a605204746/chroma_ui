@@ -1,0 +1,178 @@
+name: Release
+
+# 推送 v* tag 时触发（如 git tag v1.0.0 && git push origin v1.0.0）
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # ─── Windows ────────────────────────────────────────────────────────────────
+  build-windows:
+    name: Build (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install Python dependencies
+        run: uv sync --dev
+
+      - name: Build
+        run: uv run python build.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChromaWalnutUI-Windows
+          path: dist/ChromaWalnutUI-Windows.zip
+          if-no-files-found: error
+
+  # ─── macOS ──────────────────────────────────────────────────────────────────
+  build-macos:
+    name: Build (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install Python dependencies
+        run: uv sync --dev
+
+      - name: Install macOS PyWebView dependencies
+        run: pip install pyobjc-framework-Cocoa pyobjc-framework-WebKit
+
+      - name: Build
+        run: uv run python build.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChromaWalnutUI-macOS
+          path: dist/ChromaWalnutUI-macOS.*
+          if-no-files-found: error
+
+  # ─── Linux ──────────────────────────────────────────────────────────────────
+  build-linux:
+    name: Build (Linux)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install system dependencies (GTK + WebKitGTK)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-gi python3-gi-cairo \
+            gir1.2-gtk-3.0 gir1.2-webkit2-4.1 \
+            libgirepository1.0-dev gcc \
+            libcairo2-dev pkg-config python3-dev \
+            libwebkit2gtk-4.1-dev
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install Python dependencies
+        run: uv sync --dev
+
+      - name: Build
+        run: uv run python build.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChromaWalnutUI-Linux
+          path: dist/ChromaWalnutUI-Linux.tar.gz
+          if-no-files-found: error
+
+  # ─── 发布 Release ────────────────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ChromaWalnutUI-Windows
+          path: artifacts/
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ChromaWalnutUI-macOS
+          path: artifacts/
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ChromaWalnutUI-Linux
+          path: artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Chroma Walnut UI ${{ github.ref_name }}"
+          body: |
+            ## Chroma Walnut UI ${{ github.ref_name }}
+
+            ChromaDB 可视化桌面客户端，支持本地和远程 ChromaDB 连接管理。
+
+            ### 下载说明
+
+            | 平台 | 文件 | 运行要求 |
+            |------|------|---------|
+            | Windows | `ChromaWalnutUI-Windows.zip` | Windows 10 1803+ / Windows 11 |
+            | macOS | `ChromaWalnutUI-macOS.dmg` | macOS 10.15 Catalina+ |
+            | Linux | `ChromaWalnutUI-Linux.tar.gz` | Ubuntu 20.04+，需安装 `libwebkit2gtk-4.1-0` |
+
+            ### Windows 使用说明
+            解压后运行 `ChromaWalnutUI\ChromaWalnutUI.exe`，无需安装。
+
+            ### macOS 使用说明
+            打开 DMG，将 `ChromaWalnutUI.app` 拖入应用程序文件夹，或直接双击运行。
+            首次运行如提示安全警告，请在「系统设置 → 隐私与安全性」中允许。
+
+            ### Linux 使用说明
+            ```bash
+            tar xzf ChromaWalnutUI-Linux.tar.gz
+            ./ChromaWalnutUI/ChromaWalnutUI
+            ```
+            依赖：`sudo apt-get install libwebkit2gtk-4.1-0 libgtk-3-0`
+          files: |
+            artifacts/ChromaWalnutUI-Windows.zip
+            artifacts/ChromaWalnutUI-macOS.*
+            artifacts/ChromaWalnutUI-Linux.tar.gz
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}

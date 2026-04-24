@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Layout, Button, Typography, Badge, Tooltip,
-  message, theme, Space, Tabs, Tag, Popover, Radio, Divider,
+  message, theme, Space, Tabs, Tag, Popover, Radio, Divider, Popconfirm,
 } from 'antd'
 import {
   PlusOutlined, DisconnectOutlined,
@@ -270,10 +270,20 @@ export default function AppLayout() {
                             <Button size="small" type="text" icon={<EditOutlined />}
                               onClick={e => { e.stopPropagation(); openEdit(conn) }} />
                           </Tooltip>
-                          <Tooltip title={t('conn.delete')}>
-                            <Button size="small" type="text" danger icon={<DeleteOutlined />}
-                              onClick={e => { e.stopPropagation(); handleRemoveConn(conn.id) }} />
-                          </Tooltip>
+                          <Popconfirm
+                            title={t('conn.deleteConfirm')}
+                            description={t('conn.deleteDesc')}
+                            okText={t('conn.deleteOk')}
+                            okType="danger"
+                            cancelText={t('connModal.cancel')}
+                            onConfirm={e => { e?.stopPropagation(); handleRemoveConn(conn.id) }}
+                            onCancel={e => e?.stopPropagation()}
+                          >
+                            <Tooltip title={t('conn.delete')}>
+                              <Button size="small" type="text" danger icon={<DeleteOutlined />}
+                                onClick={e => e.stopPropagation()} />
+                            </Tooltip>
+                          </Popconfirm>
                         </div>
                       </>
                     )}
