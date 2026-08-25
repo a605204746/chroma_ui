@@ -4,7 +4,7 @@ import zhCN from 'antd/locale/zh_CN'
 import enUS from 'antd/locale/en_US'
 import { useTranslation } from 'react-i18next'
 import AppLayout from './layouts/AppLayout'
-import { bridge } from './api/bridge'
+import { connectionApi } from './api'
 import { useAppStore } from './store/appStore'
 
 export default function App() {
@@ -12,7 +12,7 @@ export default function App() {
   const { i18n } = useTranslation()
 
   useEffect(() => {
-    bridge.getConnections().then(setConnections).catch(() => {})
+    connectionApi.getConnections().then(setConnections).catch(() => {})
   }, [])
 
   useEffect(() => {

@@ -5,7 +5,7 @@ import {
   DeleteOutlined, ArrowLeftOutlined, ReloadOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
-import { bridge } from '../api/bridge'
+import { collectionApi, embeddingApi } from '../api'
 import { useAppStore } from '../store/appStore'
 import DataTab from '../tabs/DataTab'
 import SchemaTab from '../tabs/SchemaTab'
@@ -24,7 +24,7 @@ export default function CollectionDetailPage() {
 
   const loadEmbCfg = () => {
     if (!activeConnId || !activeCollection) return
-    bridge.getCollectionEmbedding(activeConnId, activeCollection).then(cfg => setEmbCfg(cfg))
+    embeddingApi.getCollectionEmbedding(activeConnId, activeCollection).then(cfg => setEmbCfg(cfg))
   }
 
   useEffect(() => { loadEmbCfg() }, [activeConnId, activeCollection])
@@ -45,17 +45,17 @@ export default function CollectionDetailPage() {
 
   const handleDelete = async () => {
     if (!activeConnId || !activeCollection) return
-    const res = await bridge.deleteCollection(activeConnId, activeCollection)
+    const res = await collectionApi.deleteCollection(activeConnId, activeCollection)
     if (res.success === false || res.error) { message.error(res.error || t('collection.deleteFailed')); return }
     message.success(t('collection.deleteSuccess', { name: activeCollection }))
-    const cols = await bridge.listCollections(activeConnId)
+    const cols = await collectionApi.listCollections(activeConnId)
     setCollections(Array.isArray(cols) ? cols : [])
     backToCollections()
   }
 
   const handleRefresh = async () => {
     if (!activeConnId) return
-    const cols = await bridge.listCollections(activeConnId)
+    const cols = await collectionApi.listCollections(activeConnId)
     setCollections(Array.isArray(cols) ? cols : [])
   }
 

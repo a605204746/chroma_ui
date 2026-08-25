@@ -12,7 +12,7 @@ import {
 } from '@ant-design/icons'
 import WalnutLogo from '../components/WalnutLogo'
 import { useTranslation } from 'react-i18next'
-import { bridge } from '../api/bridge'
+import { collectionApi, connectionApi } from '../api'
 import { useAppStore } from '../store/appStore'
 import type { ThemeMode } from '../store/appStore'
 import type { Connection } from '../types'
@@ -110,24 +110,24 @@ export default function AppLayout() {
   }, [])
 
   const handleConnect = async (id: string) => {
-    const res = await bridge.connect(id)
+    const res = await connectionApi.connect(id)
     if (!res.success) { message.error(t('conn.connectFailed', { msg: res.error })); return }
     updateConnectionStatus(id, true)
     setActiveConnId(id)
-    const cols = await bridge.listCollections(id)
+    const cols = await collectionApi.listCollections(id)
     setCollections(Array.isArray(cols) ? cols : [])
     message.success(t('conn.connected'))
   }
 
   const handleDisconnect = async (id: string) => {
-    await bridge.disconnect(id)
+    await connectionApi.disconnect(id)
     updateConnectionStatus(id, false)
     if (activeConnId === id) { setActiveConnId(null); setCollections([]) }
   }
 
   const handleRemoveConn = async (id: string) => {
-    await bridge.removeConnection(id)
-    const conns = await bridge.getConnections()
+    await connectionApi.removeConnection(id)
+    const conns = await connectionApi.getConnections()
     setConnections(conns)
     if (activeConnId === id) setActiveConnId(null)
   }

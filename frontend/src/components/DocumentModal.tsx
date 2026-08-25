@@ -3,7 +3,7 @@ import { Modal, Form, Input, Button, Space, message } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import type { Document } from '../types'
-import { bridge } from '../api/bridge'
+import { documentApi } from '../api'
 import { useAppStore } from '../store/appStore'
 
 interface Props {
@@ -66,9 +66,9 @@ export default function DocumentModal({ open, doc, onClose, onSaved }: Props) {
       const metaStr = Object.keys(metaObj).length ? JSON.stringify(metaObj) : ''
       let res
       if (isEdit) {
-        res = await bridge.updateDocument(activeConnId, activeCollection, values.id, values.document, metaStr)
+        res = await documentApi.updateDocument(activeConnId, activeCollection, values.id, values.document, metaStr)
       } else {
-        res = await bridge.addDocument(activeConnId, activeCollection, values.id, values.document, metaStr)
+        res = await documentApi.addDocument(activeConnId, activeCollection, values.id, values.document, metaStr)
       }
       if (res.error || res.success === false) {
         message.error(res.error || t('doc.failed'))
@@ -88,6 +88,7 @@ export default function DocumentModal({ open, doc, onClose, onSaved }: Props) {
     <Modal
       title={isEdit ? t('doc.editTitle') : t('doc.addTitle')}
       open={open}
+      centered
       width={600}
       onCancel={onClose}
       footer={[

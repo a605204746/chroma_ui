@@ -1,33 +1,60 @@
+"""Chroma Walnut UI 入口。
+
+运行方式：
+    uv run main.py          # 生产模式：先构建前端再打开窗口
+    uv run main.py --dev    # 开发模式：自动启动 Vite dev server（热更新）
+
+冻结模式（PyInstaller 打包后）自动使用打包进 bundle 的 frontend/dist。
+"""
+import socket
 import subprocess
 import sys
-import traceback
 import time
-import socket
-from pathlib import Path
+import traceback
 
 # ── 冻结模式（PyInstaller）适配 ───────────────────────────────────────────────
-_FROZEN = getattr(sys, 'frozen', False)
-_BASE_DIR = Path(sys._MEIPASS) if _FROZEN else Path(__file__).parent
+_FROZEN = getattr(sys, "frozen", False)
 
-# 最早初始化日志（冻结和开发模式统一）
-from logger import setup_logging, get_logger
-_dev_mode = "--dev" in sys.argv
-setup_logging(debug=_dev_mode)
-log = get_logger("main")
+# ── 单实例锁 ──────────────────────────────────────────────────────────────────
+# Windows：命名互斥量（端口绑定可能撞上 Hyper-V 动态保留端口段，导致误判）
+# 其他平台：绑定本地端口，进程退出时自动释放
+_INSTANCE_PORT = 19527
+_MUTEX_NAME = "ChromaWalnutUI_SingleInstance"
+_instance_sock: socket.socket | None = None
+_instance_mutex = None  # Windows mutex handle
 
-# 打包后捕获未处理异常写入日志
-if _FROZEN:
-    def _excepthook(exc_type, exc_val, exc_tb):
-        log.critical("Uncaught exception", exc_info=(exc_type, exc_val, exc_tb))
-    sys.excepthook = _excepthook
 
-import webview
-from api import API
-from icon_utils import apply_window_icon
+def _acquire_instance_lock() -> bool:
+    """尝试获取单实例锁，返回 True 表示成功（当前是唯一实例）。"""
+    global _instance_sock, _instance_mutex
 
-DEV_URL = "http://localhost:5173"
-FRONTEND_DIR = _BASE_DIR / "frontend"
-DIST_INDEX = FRONTEND_DIR / "dist" / "index.html"
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.CreateMutexW(None, False, _MUTEX_NAME)
+            if handle and kernel32.GetLastError() != 183:  # ERROR_ALREADY_EXISTS
+                _instance_mutex = handle  # 持有句柄直到进程退出
+                return True
+            if handle:
+                kernel32.CloseHandle(handle)
+            return False
+        except Exception:
+            pass  # 互斥量异常时退回端口方案
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+        s.bind(("127.0.0.1", _INSTANCE_PORT))
+        s.listen(1)
+        _instance_sock = s
+        return True
+    except OSError:
+        return False
+
+
+# ── Vite dev server / 前端构建 ────────────────────────────────────────────────
+
 _vite_proc: subprocess.Popen | None = None
 
 
@@ -41,134 +68,124 @@ def _port_open(host: str, port: int) -> bool:
 
 def start_vite() -> None:
     global _vite_proc
-    src_frontend = Path(__file__).parent / "frontend"
-    log.info("Starting Vite dev server")
+
+    from pathlib import Path
+    from loguru import logger
+
+    frontend_dir = Path(__file__).parent / "frontend"
+    logger.info("Starting Vite dev server")
     _vite_proc = subprocess.Popen(
         ["npm", "run", "dev"],
-        cwd=src_frontend,
+        cwd=frontend_dir,
         shell=True,
     )
     deadline = time.time() + 30
     while time.time() < deadline:
         if _port_open("localhost", 5173):
-            log.info("Vite dev server ready → http://localhost:5173")
+            logger.info("Vite dev server ready → http://localhost:5173")
             return
         time.sleep(0.3)
 
     if _vite_proc.poll() is not None:
-        log.error("Vite dev server failed to start")
+        logger.error("Vite dev server failed to start")
         sys.exit(1)
-    log.warning("Timed out waiting for Vite, proceeding anyway")
+    logger.warning("Timed out waiting for Vite, proceeding anyway")
 
 
 def stop_vite() -> None:
+    from loguru import logger
+
     if _vite_proc and _vite_proc.poll() is None:
         _vite_proc.terminate()
-        log.info("Vite dev server stopped")
+        logger.info("Vite dev server stopped")
 
 
 def build_frontend() -> None:
-    src_frontend = Path(__file__).parent / "frontend"
-    log.info("Building frontend")
-    result = subprocess.run(["npm", "run", "build"], cwd=src_frontend, shell=True)
+    from pathlib import Path
+    from loguru import logger
+
+    frontend_dir = Path(__file__).parent / "frontend"
+    logger.info("Building frontend")
+    result = subprocess.run(["npm", "run", "build"], cwd=frontend_dir, shell=True)
     if result.returncode != 0:
-        log.error("Frontend build failed")
+        logger.error("Frontend build failed")
         sys.exit(1)
-    log.info("Frontend build complete")
+    logger.info("Frontend build complete")
 
 
-def _calc_window_geometry() -> tuple[int, int, int, int]:
-    """根据屏幕分辨率计算窗口尺寸和居中坐标，返回 (w, h, x, y)。"""
-    try:
-        import ctypes
-        # 不设置 DPI 感知，GetSystemMetrics 返回逻辑像素，与 PyWebView 坐标系一致
-        sw = ctypes.windll.user32.GetSystemMetrics(0)
-        sh = ctypes.windll.user32.GetSystemMetrics(1)
-    except Exception:
-        return 1200, 760, 60, 40
-
-    if sw <= 1366:
-        w = min(int(sw * 0.88), 1200)
-        h = min(int(sh * 0.85), 720)
-    else:
-        w = min(int(sw * 0.75), 1500)
-        h = min(int(sh * 0.78), 960)
-
-    w = max(w, 900)
-    h = max(h, 600)
-    x = (sw - w) // 2
-    y = (sh - h) // 2
-
-    log.info("Screen %dx%d → window %dx%d at (%d,%d)", sw, sh, w, h, x, y)
-    return w, h, x, y
-
-
-# 单实例锁：绑定一个本地端口，进程退出时自动释放
-_INSTANCE_PORT = 19527
-_instance_sock: socket.socket | None = None
-
-
-def _acquire_instance_lock() -> bool:
-    """尝试获取单实例锁，返回 True 表示成功（当前是唯一实例）。"""
-    global _instance_sock
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
-        s.bind(("127.0.0.1", _INSTANCE_PORT))
-        s.listen(1)
-        _instance_sock = s
-        return True
-    except OSError:
-        return False
-
-
-def main():
+def main() -> int:
     if not _acquire_instance_lock():
-        log.warning("Another instance is already running, exiting.")
-        import ctypes
-        ctypes.windll.user32.MessageBoxW(
-            0,
-            "Chroma Walnut UI 已在运行中，请勿重复打开。",
-            "Chroma Walnut UI",
-            0x30,  # MB_ICONWARNING
-        )
-        return
+        print("Chroma Walnut UI 已在运行中，请勿重复打开。")
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                ctypes.windll.user32.MessageBoxW(
+                    0,
+                    "Chroma Walnut UI 已在运行中，请勿重复打开。",
+                    "Chroma Walnut UI",
+                    0x30,  # MB_ICONWARNING
+                )
+            except Exception:
+                pass
+        return 0
+
+    # 冻结模式下 --dev 无效（打包产物里没有 Vite）
+    dev_mode = "--dev" in sys.argv and not _FROZEN
+
+    from backend.core.log import setup_logging
+    from config.settings import config
+
+    setup_logging(config.logging)
+
+    from loguru import logger
+
+    # 屏蔽 chromadb / httpx 等第三方库的 DEBUG 噪音
+    import logging
+    for noisy in ("chromadb", "httpx", "httpcore", "urllib3", "werkzeug"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
+    # 打包后捕获未处理异常写入日志
+    if _FROZEN:
+        def _excepthook(exc_type, exc_val, exc_tb):
+            logger.opt(exception=(exc_type, exc_val, exc_tb)).critical("Uncaught exception")
+        sys.excepthook = _excepthook
 
     try:
-        if _FROZEN:
-            url = str(DIST_INDEX)
-            log.info("Running in frozen mode, url=%s", url)
-        elif _dev_mode:
+        if dev_mode:
             start_vite()
-            url = DEV_URL
-            log.info("Running in dev mode, url=%s", url)
-        else:
+        elif not _FROZEN:
             build_frontend()
-            url = str(DIST_INDEX)
-            log.info("Running in production mode, url=%s", url)
 
-        win_w, win_h, win_x, win_y = _calc_window_geometry()
-        api = API()
-        webview.create_window(
-            title="Chroma Walnut UI",
-            url=url,
-            js_api=api,
-            width=win_w,
-            height=win_h,
-            x=win_x,
-            y=win_y,
-            min_size=(900, 600),
+        from backend.core.app import Application
+        from backend.features.collection.bridge import CollectionBridge
+        from backend.features.connection.bridge import ConnectionBridge
+        from backend.features.document.bridge import DocumentBridge
+        from backend.features.embedding.bridge import EmbeddingBridge
+        from backend.features.query.bridge import QueryBridge
+        from backend.shared.chroma import get_chroma_manager
+
+        mgr = get_chroma_manager()
+
+        app = Application(config, dev_mode=dev_mode)
+
+        (app
+         .register_bridge("connection", ConnectionBridge(mgr))
+         .register_bridge("collection", CollectionBridge(mgr))
+         .register_bridge("document",   DocumentBridge(mgr))
+         .register_bridge("query",      QueryBridge(mgr))
+         .register_bridge("embedding",  EmbeddingBridge(mgr))
         )
-        apply_window_icon()
-        webview.start(debug=_dev_mode and not _FROZEN)
-        log.info("Application exited normally")
+
+        logger.info("所有模块已就绪，启动窗口（dev={}）", dev_mode)
+        return app.run()
     except Exception:
-        log.critical("Fatal error in main()\n%s", traceback.format_exc())
+        from loguru import logger as _logger
+        _logger.exception("Fatal error in main()")
         raise
     finally:
-        if _dev_mode and not _FROZEN:
+        if dev_mode:
             stop_vite()
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

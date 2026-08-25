@@ -3,8 +3,8 @@
 Chroma Walnut UI — 跨平台一键打包脚本
 
 用法:
-    uv run python build.py           # 正式包（无控制台）
-    uv run python build.py --debug   # 调试包（保留控制台，可看错误）
+    uv run python scripts/build.py           # 正式包（无控制台）
+    uv run python scripts/build.py --debug   # 调试包（保留控制台，可看错误）
 
 支持平台:
     Windows  → dist/ChromaWalnutUI/ChromaWalnutUI.exe（onedir）
@@ -22,7 +22,7 @@ if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = ROOT / "frontend"
 APP_NAME = "ChromaWalnutUI"
 PYTHON = sys.executable
@@ -153,7 +153,7 @@ def _dir_size(path: Path) -> str:
 def generate_icon():
     _step(f"生成应用图标 ({ICON_FILE.name})")
     sys.path.insert(0, str(ROOT))
-    from icon_utils import _make_walnut_ico, _make_walnut_icns, _make_walnut_png
+    from backend.shared.icon import _make_walnut_ico, _make_walnut_icns, _make_walnut_png
 
     if PLATFORM == "win32":
         ICON_FILE.write_bytes(_make_walnut_ico())

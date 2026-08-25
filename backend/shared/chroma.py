@@ -1,7 +1,10 @@
+"""ChromaDB 多连接管理器 — 所有 feature bridge 共享的 Chroma 客户端池。"""
+import asyncio
+import functools
 import json
 import uuid
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from dataclasses import dataclass, asdict
 from typing import Union
 
 import chromadb
@@ -128,3 +131,21 @@ class ChromaManager:
         if not client:
             raise ValueError(f"连接 {conn_id} 未建立，请先连接")
         return client
+
+
+# ── 模块级单例：所有 feature bridge 共享同一个管理器 ─────────────────────────
+
+_manager: ChromaManager | None = None
+
+
+def get_chroma_manager() -> ChromaManager:
+    global _manager
+    if _manager is None:
+        _manager = ChromaManager()
+    return _manager
+
+
+async def run_blocking(fn, *args, **kwargs):
+    """在线程池中执行阻塞调用（chromadb / 网络 I/O），避免阻塞事件循环。"""
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, functools.partial(fn, *args, **kwargs))

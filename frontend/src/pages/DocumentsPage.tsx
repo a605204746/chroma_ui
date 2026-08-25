@@ -3,7 +3,7 @@ import { Table, Button, Space, Popconfirm, message, Typography, Tag } from 'antd
 import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { Document } from '../types'
-import { bridge } from '../api/bridge'
+import { documentApi } from '../api'
 import { useAppStore } from '../store/appStore'
 import DocumentModal from '../components/DocumentModal'
 
@@ -22,7 +22,7 @@ export default function DocumentsPage() {
     if (!activeConnId || !activeCollection) return
     setLoading(true)
     try {
-      const res = await bridge.getDocuments(activeConnId, activeCollection, PAGE_SIZE, (p - 1) * PAGE_SIZE)
+      const res = await documentApi.getDocuments(activeConnId, activeCollection, PAGE_SIZE, (p - 1) * PAGE_SIZE)
       if (res.error) { message.error(res.error); return }
       setDocs(res.items ?? [])
       setTotal(res.total ?? 0)
@@ -36,7 +36,7 @@ export default function DocumentsPage() {
 
   const handleDelete = async (id: string) => {
     if (!activeConnId || !activeCollection) return
-    const res = await bridge.deleteDocument(activeConnId, activeCollection, id)
+    const res = await documentApi.deleteDocument(activeConnId, activeCollection, id)
     if (res.error || res.success === false) { message.error(res.error || '删除失败'); return }
     message.success('文档已删除')
     loadDocs()

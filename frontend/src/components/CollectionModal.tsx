@@ -3,7 +3,7 @@ import { Modal, Form, Input, Button, Space, message } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import type { Collection } from '../types'
-import { bridge } from '../api/bridge'
+import { collectionApi } from '../api'
 import { useAppStore } from '../store/appStore'
 
 interface Props {
@@ -70,9 +70,9 @@ export default function CollectionModal({ open, editCollection, onClose, onSaved
 
       let res
       if (isEdit) {
-        res = await bridge.modifyCollection(activeConnId, editCollection.name, values.name, metaJson)
+        res = await collectionApi.modifyCollection(activeConnId, editCollection.name, values.name, metaJson)
       } else {
-        res = await bridge.createCollection(activeConnId, values.name, metaJson)
+        res = await collectionApi.createCollection(activeConnId, values.name, metaJson)
       }
 
       if (res.error || res.success === false) {
@@ -80,7 +80,7 @@ export default function CollectionModal({ open, editCollection, onClose, onSaved
         return
       }
 
-      const cols = await bridge.listCollections(activeConnId)
+      const cols = await collectionApi.listCollections(activeConnId)
       setCollections(Array.isArray(cols) ? cols : [])
       message.success(t(isEdit ? 'collModal.editSuccess' : 'collModal.createSuccess', { name: values.name }))
       handleClose()
@@ -96,6 +96,7 @@ export default function CollectionModal({ open, editCollection, onClose, onSaved
     <Modal
       title={t(isEdit ? 'collModal.editTitle' : 'collModal.title')}
       open={open}
+      centered
       onCancel={handleClose}
       width={520}
       footer={[

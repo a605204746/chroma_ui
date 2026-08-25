@@ -5,7 +5,7 @@ import {
 } from 'antd'
 import { SearchOutlined, FilterOutlined, ApartmentOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
-import { bridge } from '../api/bridge'
+import { queryApi } from '../api'
 import { useAppStore } from '../store/appStore'
 import type { QueryResultItem } from '../types'
 import FilterBuilder, { buildWhereJson } from '../components/FilterBuilder'
@@ -34,7 +34,7 @@ export default function SearchTab({ hasEmbedding, onConfigEmbed, embModel }: Pro
       const whereJson = buildWhereJson(filterRows)
       setLoading(true)
       setError(null)
-      const res = await bridge.query(activeConnId, activeCollection, values.query_text, values.n_results ?? 10, whereJson)
+      const res = await queryApi.query(activeConnId, activeCollection, values.query_text, values.n_results ?? 10, whereJson)
       if (res.error) { setError(res.error); setResults([]); return }
       setResults(res.items ?? [])
       setQueried(true)

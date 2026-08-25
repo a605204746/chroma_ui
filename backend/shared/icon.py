@@ -1,13 +1,18 @@
-"""Generate and apply the walnut window icon (cross-platform)."""
-import sys
+"""Generate and apply the walnut window icon (cross-platform).
+
+图标在运行时按需生成到 ~/.chroma_walnut_ui/，路径传给
+``webview.start(icon=...)``（见 backend/core/window.py → Application.run）。
+打包脚本（scripts/build*.py）也复用这里的生成函数制作可执行文件图标。
+"""
 import struct
+import sys
 import zlib
-import threading
-import time
 from pathlib import Path
 
-ICON_PATH = Path.home() / ".chroma_walnut_ui" / "walnut.ico"
-_WINDOW_TITLE = "Chroma Walnut UI"
+_ICON_DIR = Path.home() / ".chroma_walnut_ui"
+ICO_PATH = _ICON_DIR / "walnut.ico"
+ICNS_PATH = _ICON_DIR / "walnut.icns"
+PNG_PATH = _ICON_DIR / "walnut.png"
 
 
 def _make_walnut_png(size: int = 256) -> bytes:
@@ -124,40 +129,30 @@ def _make_walnut_icns() -> bytes:
 
 
 def ensure_icon() -> Path:
-    if not ICON_PATH.exists():
-        ICON_PATH.parent.mkdir(parents=True, exist_ok=True)
-        ICON_PATH.write_bytes(_make_walnut_ico())
-    return ICON_PATH
+    if not ICO_PATH.exists():
+        ICO_PATH.parent.mkdir(parents=True, exist_ok=True)
+        ICO_PATH.write_bytes(_make_walnut_ico())
+    return ICO_PATH
 
 
-def _set_win32_icon(icon_path: Path, max_wait: float = 6.0, interval: float = 0.3):
-    if sys.platform != 'win32':
-        return
-    try:
-        import ctypes
-        u32 = ctypes.windll.user32
-        LR_LOADFROMFILE = 0x10
-        IMAGE_ICON = 1
-        WM_SETICON = 0x80
-
-        hIcon = u32.LoadImageW(None, str(icon_path), IMAGE_ICON, 0, 0, LR_LOADFROMFILE)
-        if not hIcon:
-            return
-
-        elapsed = 0.0
-        while elapsed < max_wait:
-            hwnd = u32.FindWindowW(None, _WINDOW_TITLE)
-            if hwnd:
-                u32.SendMessageW(hwnd, WM_SETICON, 0, hIcon)  # ICON_SMALL
-                u32.SendMessageW(hwnd, WM_SETICON, 1, hIcon)  # ICON_BIG
-                return
-            time.sleep(interval)
-            elapsed += interval
-    except Exception as e:
-        print(f"[icon] {e}")
+def ensure_icon_icns() -> Path:
+    if not ICNS_PATH.exists():
+        ICNS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        ICNS_PATH.write_bytes(_make_walnut_icns())
+    return ICNS_PATH
 
 
-def apply_window_icon():
-    """Generate the ICO (once) and spawn a thread to stamp it onto the window."""
-    ico = ensure_icon()
-    threading.Thread(target=_set_win32_icon, args=(ico,), daemon=True).start()
+def ensure_icon_png() -> Path:
+    if not PNG_PATH.exists():
+        PNG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        PNG_PATH.write_bytes(_make_walnut_png(256))
+    return PNG_PATH
+
+
+def app_icon_path() -> str:
+    """当前平台的窗口图标路径（传给 pywebview 的 icon 参数）。"""
+    if sys.platform == "win32":
+        return str(ensure_icon())
+    if sys.platform == "darwin":
+        return str(ensure_icon_icns())
+    return str(ensure_icon_png())

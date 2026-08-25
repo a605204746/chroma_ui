@@ -4,7 +4,7 @@ import { PlusOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, EditOutli
 import { useTranslation } from 'react-i18next'
 import type { ColumnsType } from 'antd/es/table'
 import type { Collection } from '../types'
-import { bridge } from '../api/bridge'
+import { collectionApi } from '../api'
 import { useAppStore } from '../store/appStore'
 import CollectionModal from '../components/CollectionModal'
 
@@ -20,7 +20,7 @@ export default function CollectionsPage() {
     if (!activeConnId) return
     setLoading(true)
     try {
-      const cols = await bridge.listCollections(activeConnId)
+      const cols = await collectionApi.listCollections(activeConnId)
       setCollections(Array.isArray(cols) ? cols : [])
     } finally {
       setLoading(false)
@@ -31,7 +31,7 @@ export default function CollectionsPage() {
 
   const handleDelete = async (name: string) => {
     if (!activeConnId) return
-    const res = await bridge.deleteCollection(activeConnId, name)
+    const res = await collectionApi.deleteCollection(activeConnId, name)
     if (res.success === false || res.error) { message.error(res.error || t('collections.deleteFailed')); return }
     message.success(t('collections.deleteSuccess', { name }))
     loadCollections()

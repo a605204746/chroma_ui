@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal, Form, Input, InputNumber, Button, message, Radio, Space, Typography } from 'antd'
 import { FolderOpenOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
-import { bridge } from '../api/bridge'
+import { connectionApi } from '../api'
 import { useAppStore } from '../store/appStore'
 import type { Connection } from '../types'
 
@@ -42,7 +42,7 @@ export default function ConnectionModal({ open, editingConn, onClose }: Props) {
   const handlePickDir = async () => {
     setPicking(true)
     try {
-      const dir = await bridge.pickDirectory()
+      const dir = await connectionApi.pickDirectory()
       if (dir) form.setFieldValue('path', dir)
     } finally {
       setPicking(false)
@@ -56,8 +56,8 @@ export default function ConnectionModal({ open, editingConn, onClose }: Props) {
       )
       setTesting(true)
       setTestResult(null)
-      const res = await bridge.testConnection(
-        connType ?? 'http',
+      const res = await connectionApi.testConnection(
+        connType ?? 'persistent',
         values.host ?? form.getFieldValue('host') ?? '',
         values.port ?? form.getFieldValue('port') ?? 8000,
         values.path ?? form.getFieldValue('path') ?? '',
@@ -77,13 +77,13 @@ export default function ConnectionModal({ open, editingConn, onClose }: Props) {
       setLoading(true)
       const token = values.conn_type === 'http' ? (values.token ?? '') : ''
       if (isEdit) {
-        await bridge.updateConnection(editingConn.id, values.name, values.conn_type,
+        await connectionApi.updateConnection(editingConn.id, values.name, values.conn_type,
           values.host ?? '', values.port ?? 8000, true, values.path ?? '', token)
       } else {
-        await bridge.addConnection(values.name, values.conn_type,
+        await connectionApi.addConnection(values.name, values.conn_type,
           values.host ?? '', values.port ?? 8000, true, values.path ?? '', token)
       }
-      const conns = await bridge.getConnections()
+      const conns = await connectionApi.getConnections()
       setConnections(conns)
       message.success(isEdit ? t('connModal.updated') : t('connModal.added'))
       form.resetFields()
@@ -101,6 +101,7 @@ export default function ConnectionModal({ open, editingConn, onClose }: Props) {
     <Modal
       title={isEdit ? t('connModal.editTitle') : t('connModal.addTitle')}
       open={open}
+      centered
       onCancel={handleClose}
       footer={[
         <Button key="cancel" onClick={handleClose}>{t('connModal.cancel')}</Button>,
@@ -108,14 +109,14 @@ export default function ConnectionModal({ open, editingConn, onClose }: Props) {
       ]}
     >
       <Form form={form} layout="vertical"
-        initialValues={{ conn_type: 'http', host: 'localhost', port: 8000, path: '' }}>
+        initialValues={{ conn_type: 'persistent', host: 'localhost', port: 8000, path: '' }}>
         <Form.Item name="name" label={t('connModal.name')} rules={[{ required: true, message: t('connModal.nameRequired') }]}>
           <Input placeholder={t('connModal.namePlaceholder')} />
         </Form.Item>
         <Form.Item name="conn_type" label={t('connModal.type')}>
           <Radio.Group onChange={() => setTestResult(null)}>
-            <Radio value="http">{t('connModal.httpType')}</Radio>
             <Radio value="persistent">{t('connModal.persistType')}</Radio>
+            <Radio value="http">{t('connModal.httpType')}</Radio>
           </Radio.Group>
         </Form.Item>
         {connType === 'persistent' ? (

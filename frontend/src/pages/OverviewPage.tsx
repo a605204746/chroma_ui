@@ -5,7 +5,7 @@ import {
   TableOutlined, FolderOutlined, GlobalOutlined, DesktopOutlined,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
-import { bridge } from '../api/bridge'
+import { collectionApi } from '../api'
 import { useAppStore } from '../store/appStore'
 import type { Collection } from '../types'
 import type { ColumnsType } from 'antd/es/table'
@@ -45,7 +45,7 @@ export default function OverviewPage({ onAddConnection }: Props) {
   useEffect(() => {
     if (!activeConnId) return
     setLoading(true)
-    bridge.listCollections(activeConnId)
+    collectionApi.listCollections(activeConnId)
       .then(cols => setCollections(Array.isArray(cols) ? cols : []))
       .finally(() => setLoading(false))
   }, [activeConnId])

@@ -29,7 +29,7 @@ jobs:
         run: uv sync --dev
 
       - name: Build
-        run: uv run python build.py
+        run: uv run python scripts/build.py
         env:
           # 防止 Windows 控制台 cp1252 编码导致中文 UnicodeEncodeError
           PYTHONUTF8: '1'
@@ -67,7 +67,7 @@ jobs:
         run: pip install pyobjc-framework-Cocoa pyobjc-framework-WebKit
 
       - name: Build
-        run: uv run python build.py
+        run: uv run python scripts/build.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -110,7 +110,7 @@ jobs:
         run: uv sync --dev
 
       - name: Build
-        run: uv run python build.py
+        run: uv run python scripts/build.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

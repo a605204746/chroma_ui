@@ -3,8 +3,8 @@
 Chroma Walnut UI — Windows 一键打包脚本
 
 用法:
-    uv run python build_windows.py           # 正式包（无控制台）
-    uv run python build_windows.py --debug   # 调试包（保留控制台，可看错误）
+    uv run python scripts/build_windows.py           # 正式包（无控制台）
+    uv run python scripts/build_windows.py --debug   # 调试包（保留控制台，可看错误）
 
 输出:
     dist/ChromaWalnutUI/ChromaWalnutUI.exe  （及其依赖文件）
@@ -15,7 +15,7 @@ import sys
 import shutil
 from pathlib import Path
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = ROOT / "frontend"
 APP_NAME = "ChromaWalnutUI"
 ICON_FILE = ROOT / "_build_icon.ico"
@@ -103,7 +103,7 @@ def _dir_size(path: Path) -> str:
 def generate_icon():
     _step("生成应用图标 (walnut.ico)")
     sys.path.insert(0, str(ROOT))
-    from icon_utils import _make_walnut_ico
+    from backend.shared.icon import _make_walnut_ico
     ICON_FILE.write_bytes(_make_walnut_ico())
     _ok(f"图标生成 → {ICON_FILE.name}")
 
@@ -205,7 +205,7 @@ def main():
         cleanup()
 
     exe = ROOT / "dist" / APP_NAME / f"{APP_NAME}.exe"
-    log_path = Path.home() / ".chroma_walnut_ui" / "error.log"
+    log_path = exe.parent / "data" / "logs" / "app.log"
 
     _banner("打包完成")
     print(f"  可执行文件: {exe}")

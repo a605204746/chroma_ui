@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Tag, Typography, Spin, Card, Descriptions } from 'antd'
 import { useTranslation } from 'react-i18next'
-import { bridge } from '../api/bridge'
+import { embeddingApi } from '../api'
 import { useAppStore } from '../store/appStore'
 
 export default function SchemaTab() {
@@ -15,7 +15,7 @@ export default function SchemaTab() {
     if (!activeConnId || !activeCollection) return
     setLoading(true)
     setEmbDim(undefined)
-    bridge.getEmbeddingInfo(activeConnId, activeCollection)
+    embeddingApi.getEmbeddingInfo(activeConnId, activeCollection)
       .then(res => setEmbDim(res.error ? null : (res.dimension ?? null)))
       .finally(() => setLoading(false))
   }, [activeConnId, activeCollection])

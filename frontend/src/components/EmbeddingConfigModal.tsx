@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal, Form, Input, Button, message, Alert, Space, Tag, Typography, Tooltip, InputNumber } from 'antd'
 import { ApartmentOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
-import { bridge } from '../api/bridge'
+import { embeddingApi } from '../api'
 import { useAppStore } from '../store/appStore'
 
 interface Props {
@@ -28,7 +28,7 @@ export default function EmbeddingConfigModal({ open, onClose, onSaved }: Props) 
 
   useEffect(() => {
     if (open && activeConnId && activeCollection) {
-      bridge.getCollectionEmbedding(activeConnId, activeCollection).then(cfg => {
+      embeddingApi.getCollectionEmbedding(activeConnId, activeCollection).then(cfg => {
         form.setFieldsValue({
           embedding_url: cfg.embedding_url ?? '',
           embedding_model: cfg.embedding_model ?? '',
@@ -48,12 +48,12 @@ export default function EmbeddingConfigModal({ open, onClose, onSaved }: Props) 
   const handleTest = async () => {
     if (!activeConnId || !activeCollection) return
     const values = form.getFieldsValue()
-    await bridge.setCollectionEmbedding(activeConnId, activeCollection,
+    await embeddingApi.setCollectionEmbedding(activeConnId, activeCollection,
       values.embedding_url ?? '', values.embedding_model ?? '', values.embedding_api_key ?? '')
     setTesting(true)
     setTestResult(null)
     try {
-      const res = await bridge.testEmbedding(activeConnId, activeCollection, '测试文本 hello')
+      const res = await embeddingApi.testEmbedding(activeConnId, activeCollection, '测试文本 hello')
       setTestResult(res)
       if (res.dimension) {
         form.setFieldValue('dimension', res.dimension)
@@ -68,7 +68,7 @@ export default function EmbeddingConfigModal({ open, onClose, onSaved }: Props) 
     try {
       const values = await form.validateFields()
       setLoading(true)
-      await bridge.setCollectionEmbedding(activeConnId, activeCollection,
+      await embeddingApi.setCollectionEmbedding(activeConnId, activeCollection,
         values.embedding_url ?? '', values.embedding_model ?? '',
         values.embedding_api_key ?? '', values.dimension ?? 0)
       message.success(t('embed.savedSuccess'))
@@ -83,7 +83,7 @@ export default function EmbeddingConfigModal({ open, onClose, onSaved }: Props) 
 
   const handleClear = async () => {
     if (!activeConnId || !activeCollection) return
-    await bridge.clearCollectionEmbedding(activeConnId, activeCollection)
+    await embeddingApi.clearCollectionEmbedding(activeConnId, activeCollection)
     form.resetFields()
     setTestResult(null)
     message.success(t('embed.cleared'))
@@ -97,6 +97,7 @@ export default function EmbeddingConfigModal({ open, onClose, onSaved }: Props) 
     <Modal
       title={<Space><ApartmentOutlined /><span>{t('embed.title', { name: activeCollection })}</span></Space>}
       open={open}
+      centered
       onCancel={onClose}
       width={520}
       footer={[

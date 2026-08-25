@@ -1,12 +1,16 @@
 [project]
 name = "chroma-walnut-ui"
 version = "0.1.0"
-description = "Add your description here"
+description = "ChromaDB desktop client built with pywebview + React"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "chromadb>=0.6",
     "pywebview>=5",
+    # 模板框架层依赖
+    "aiosqlite>=0.22.1",
+    "loguru>=0.7.0",
+    "orjson>=3.9",
     # macOS WebKit backend
     "pyobjc-framework-Cocoa>=9; sys_platform == 'darwin'",
     "pyobjc-framework-WebKit>=9; sys_platform == 'darwin'",

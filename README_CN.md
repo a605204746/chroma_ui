@@ -112,12 +112,11 @@ uv run python main.py
 **开发模式**（前端热更新，适合二次开发）：
 
 ```bash
-# 终端 1：启动前端开发服务器
-cd frontend && npm run dev
-
-# 终端 2：启动 PyWebView（加载 localhost:5173）
+# 自动启动 Vite dev server（localhost:5173）并打开窗口
 uv run python main.py --dev
 ```
+
+> 也可以手动在终端运行 `cd frontend && npm run dev`，再执行 `uv run python main.py --dev`（端口已占用时会自动复用）。
 
 ## 跨平台打包
 
@@ -125,10 +124,10 @@ uv run python main.py --dev
 
 ```bash
 # 正式包（无控制台）
-uv run python build.py
+uv run python scripts/build.py
 
 # 调试包（保留控制台，用于排查启动错误）
-uv run python build.py --debug
+uv run python scripts/build.py --debug
 ```
 
 脚本自动完成：检查依赖 → 构建前端 → 生成图标 → PyInstaller 打包 → 压缩分发文件。
@@ -160,43 +159,77 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-工作流（`.github/workflows/release.yml`）会在 `windows-latest`、`macos-latest`、`ubuntu-24.04` 上各自运行 `build.py`，完成后将三个平台的压缩包上传至 Release。包含 `-` 的 tag（如 `v1.0.0-beta`）自动标记为预发布版本。
+工作流（`.github/workflows/release.yml`）会在 `windows-latest`、`macos-latest`、`ubuntu-24.04` 上各自运行 `scripts/build.py`，完成后将三个平台的压缩包上传至 Release。包含 `-` 的 tag（如 `v1.0.0-beta`）自动标记为预发布版本。
 
 ## 项目结构
 
+项目采用 pywebview-react-template 架构：通用框架层 `backend/core` + 按功能划分的桥接器 `backend/features` + 前端 `bridge` 通用桥接层与自动生成的 `api` 层。
+
 ```
 chroma_ui/
-├── main.py                  # 入口：PyWebView 窗口，单实例锁，居中计算
-├── api.py                   # Python API 层：所有暴露给 JS 的方法
-├── chroma_manager.py        # ChromaDB 多连接管理器
-├── icon_utils.py            # 纯 Python 核桃图标生成（ICO / ICNS / PNG）
-├── logger.py                # 统一日志（RotatingFileHandler，5 MB × 3）
-├── build.py                 # 跨平台一键打包脚本
+├── main.py                  # 入口：单实例锁、Vite 生命周期、桥接器注册
 ├── pyproject.toml
 ├── uv.lock
+├── config/
+│   └── settings.py          # 全局配置（窗口 / 日志）
+├── backend/
+│   ├── core/                # 通用框架层（来自 pywebview-react-template）
+│   │   ├── app.py           # Application：事件循环、窗口生命周期、资源清理
+│   │   ├── bridge.py        # Bridge 基类 + @exposed 路由表
+│   │   ├── channel.py       # JS 调用统一入口 dispatch + 事件批量推送
+│   │   ├── config.py        # AppConfig / WindowConfig / LoggingConfig
+│   │   ├── window.py        # 窗口创建、几何记忆与恢复
+│   │   ├── log.py           # loguru 日志初始化（控制台 + 轮转文件）
+│   │   ├── paths.py         # 开发 / 打包模式路径解析
+│   │   ├── event.py         # @event 事件注册表（Python → JS 推送）
+│   │   ├── database.py      # 异步 SQLite 封装（本项目未使用）
+│   │   └── service.py       # DbReadyService 基类（本项目未使用）
+│   ├── features/            # 业务桥接器，每个功能一个目录
+│   │   ├── connection/      # 连接管理（增删改查 / 测试 / 连接断开）
+│   │   ├── collection/      # 集合管理
+│   │   ├── document/        # 文档增删改查与种子数据
+│   │   ├── query/           # 向量查询
+│   │   └── embedding/       # 集合级向量模型配置
+│   └── shared/              # 跨功能共享服务
+│       ├── chroma.py        # ChromaDB 多连接管理器（单例）
+│       ├── embedding.py     # 向量配置持久化与接口调用
+│       └── icon.py          # 纯 Python 核桃图标生成（ICO / ICNS / PNG）
+├── scripts/
+│   ├── gen.py               # 由桥接器自动生成前端 api/event TS 代码
+│   ├── build.py             # 跨平台一键打包脚本
+│   └── build_windows.py     # Windows 专用打包脚本
 ├── .github/
 │   └── workflows/
 │       └── release.yml      # CI/CD：tag 触发 → 三平台构建 → GitHub Release
 └── frontend/
     └── src/
-        ├── api/bridge.ts        # JS ↔ Python API 类型安全封装
+        ├── bridge/          # 通用 pywebview 桥接层：dispatch、事件订阅、hooks
+        ├── api/             # 各功能调用封装（gen.py 自动生成）
+        ├── event/           # 事件常量（gen.py 自动生成）
         ├── store/appStore.ts    # Zustand 全局状态
-        ├── i18n/                # zh.ts / en.ts 翻译文件
-        ├── layouts/             # 主布局：可折叠侧边栏 + 内容区
-        ├── components/          # 各类弹窗、WalnutLogo、FilterBuilder
-        ├── pages/               # 概览、集合列表、集合详情
-        └── tabs/                # 数据浏览、Schema、向量搜索
+        ├── i18n/            # zh.ts / en.ts 翻译文件
+        ├── layouts/         # 主布局：可折叠侧边栏 + 内容区
+        ├── components/      # 各类弹窗、WalnutLogo、FilterBuilder
+        ├── pages/           # 概览、集合列表、集合详情
+        └── tabs/            # 数据浏览、Schema、向量搜索
+```
+
+修改桥接器方法签名后，用以下命令重新生成前端 API 层：
+
+```bash
+uv run python scripts/gen.py
 ```
 
 ## 数据持久化
 
-所有数据存储在用户目录下，不写注册表，不污染系统目录。
+用户配置存放在用户目录；运行时数据（日志、窗口几何）存放在应用旁边，不写注册表。
 
 | 路径 | 说明 |
 |---|---|
 | `~/.chroma_walnut_ui/connections.json` | 连接配置（含 Token 明文，仅本地使用） |
 | `~/.chroma_walnut_ui/collection_embeddings.json` | 各集合的向量模型配置 |
-| `~/.chroma_walnut_ui/app.log` | 应用日志（满 5 MB 自动轮转，保留 3 个备份） |
+| `<应用目录>/data/logs/app.log` | 应用日志（loguru，满 10 MB 轮转，保留 7 天） |
+| `<应用目录>/data/window_state.json` | 窗口几何记忆 |
 
 ## 向量模型配置说明
 
@@ -216,7 +249,7 @@ Chroma Walnut UI 支持任何兼容 OpenAI Embeddings 格式的 API：
 
 **Q: 启动后窗口空白？**
 
-A: 检查 Python 依赖是否正确安装（尤其是 `pywebview`）。Windows 用户确认 Edge WebView2 可用。查看 `~/.chroma_walnut_ui/app.log` 可获取详细错误信息。
+A: 检查 Python 依赖是否正确安装（尤其是 `pywebview`）。Windows 用户确认 Edge WebView2 可用。查看应用目录下 `data/logs/app.log` 可获取详细错误信息。
 
 **Q: 开发模式下前端修改没有热更新？**
 

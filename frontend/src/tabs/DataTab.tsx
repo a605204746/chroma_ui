@@ -7,7 +7,7 @@ import { PlusOutlined, DeleteOutlined, EditOutlined, SearchOutlined, ApartmentOu
 import { useTranslation } from 'react-i18next'
 import type { ColumnsType } from 'antd/es/table'
 import type { Document } from '../types'
-import { bridge } from '../api/bridge'
+import { documentApi } from '../api'
 import { useAppStore } from '../store/appStore'
 import DocumentModal from '../components/DocumentModal'
 
@@ -39,7 +39,7 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
     if (!activeConnId || !activeCollection) return
     setLoading(true)
     try {
-      const res = await bridge.getDocuments(activeConnId, activeCollection, ps, (p - 1) * ps, withEmb)
+      const res = await documentApi.getDocuments(activeConnId, activeCollection, ps, (p - 1) * ps, withEmb)
       if (res.error) { message.error(res.error); return }
       setDocs(res.items ?? [])
       setTotal(res.total ?? 0)
@@ -55,7 +55,7 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
 
   const handleDelete = async (id: string) => {
     if (!activeConnId || !activeCollection) return
-    const res = await bridge.deleteDocument(activeConnId, activeCollection, id)
+    const res = await documentApi.deleteDocument(activeConnId, activeCollection, id)
     if (res.error || res.success === false) { message.error(res.error || t('data.deleteFailed')); return }
     message.success(t('data.deleteSuccess'))
     loadDocs()
@@ -94,7 +94,7 @@ export default function DataTab({ hasEmbedding, onConfigEmbed }: Props) {
         if (!activeConnId || !activeCollection) return
         setSeeding(true)
         try {
-          const res = await bridge.seedTestData(activeConnId, activeCollection)
+          const res = await documentApi.seedTestData(activeConnId, activeCollection)
           if (res.error || res.success === false) { message.error(res.error); return }
           message.success(t('data.seedSuccess', { n: res.count }))
           loadDocs(1, showEmbedding)

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Card, Form, Input, InputNumber, Space, Tag, Typography, Alert, Divider } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
-import { bridge } from '../api/bridge'
+import { queryApi } from '../api'
 import { useAppStore } from '../store/appStore'
 import type { QueryResultItem } from '../types'
 
@@ -23,7 +23,7 @@ export default function QueryPage() {
       }
       setLoading(true)
       setError(null)
-      const res = await bridge.query(activeConnId, activeCollection, values.query_text, values.n_results ?? 10, whereStr)
+      const res = await queryApi.query(activeConnId, activeCollection, values.query_text, values.n_results ?? 10, whereStr)
       if (res.error) { setError(res.error); setResults([]); return }
       setResults(res.items ?? [])
       setQueried(true)
